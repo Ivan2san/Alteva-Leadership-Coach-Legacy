@@ -1,20 +1,42 @@
 import { Button } from "@/components/ui/button";
 import { topicConfigurations } from "@/lib/topic-configurations";
+import { 
+  User, 
+  Activity, 
+  Target, 
+  PieChart, 
+  Heart, 
+  Grid3X3, 
+  MessageCircle, 
+  CheckCircle,
+  LucideIcon 
+} from "lucide-react";
 
 interface ActionButtonProps {
   topic: string;
   onClick: (topic: string) => void;
 }
 
-const iconComponents: Record<string, string> = {
-  'fa-user-chart': '📊',
-  'fa-traffic-light': '🚦',
-  'fa-target': '🎯',
-  'fa-chart-pie': '📈',
-  'fa-heart': '❤️',
-  'fa-th': '⚏',
-  'fa-comments': '💬',
-  'fa-calendar-check': '✅'
+const iconComponents: Record<string, LucideIcon> = {
+  'fa-user-chart': User,
+  'fa-traffic-light': Activity,
+  'fa-target': Target,
+  'fa-chart-pie': PieChart,
+  'fa-heart': Heart,
+  'fa-th': Grid3X3,
+  'fa-comments': MessageCircle,
+  'fa-calendar-check': CheckCircle
+};
+
+const descriptions: Record<string, string> = {
+  'growth-profile': 'Assess strengths & growth areas',
+  'red-green-zones': 'Identify effective behaviors',
+  'big-practice': 'Focus on biggest impact',
+  '360-report': 'Interpret feedback results',
+  'growth-values': 'Align actions with values',
+  'growth-matrix': 'Integrate development areas',
+  'oora-conversation': 'Structure important talks',
+  'daily-checkin': 'Reflect on daily progress'
 };
 
 export default function ActionButton({ topic, onClick }: ActionButtonProps) {
@@ -22,23 +44,30 @@ export default function ActionButton({ topic, onClick }: ActionButtonProps) {
   
   if (!config) return null;
 
-  const icon = iconComponents[config.icon] || '📋';
+  const IconComponent = iconComponents[config.icon] || User;
+  const description = descriptions[topic] || 'Leadership development';
 
   return (
     <Button
       variant="outline"
-      className="bg-card hover:bg-accent/5 border border-border rounded-lg p-4 text-left transition-all duration-200 button-hover min-h-[120px] flex flex-col justify-between h-auto"
+      className="group relative bg-gradient-to-br from-card to-card/50 hover:from-primary/5 hover:to-accent/10 border border-border/50 hover:border-primary/20 rounded-xl p-6 text-left transition-all duration-300 ease-in-out min-h-[140px] flex flex-col justify-between h-auto shadow-sm hover:shadow-md hover:-translate-y-0.5"
       onClick={() => onClick(topic)}
       data-testid={`button-action-${topic}`}
     >
-      <div className="w-full">
-        <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center mb-3">
-          <span className="text-lg">{icon}</span>
+      <div className="w-full space-y-4">
+        <div className="w-12 h-12 bg-gradient-to-br from-primary/10 to-primary/5 group-hover:from-primary/15 group-hover:to-primary/10 rounded-xl flex items-center justify-center transition-all duration-300">
+          <IconComponent className="text-primary w-6 h-6 group-hover:scale-110 transition-transform duration-300" />
         </div>
-        <h3 className="font-medium text-foreground text-sm leading-tight text-left">
-          {config.title}
-        </h3>
+        <div className="space-y-1">
+          <h3 className="font-semibold text-foreground text-sm leading-tight group-hover:text-primary transition-colors duration-300">
+            {config.title}
+          </h3>
+          <p className="text-xs text-muted-foreground leading-relaxed group-hover:text-foreground/80 transition-colors duration-300">
+            {description}
+          </p>
+        </div>
       </div>
+      <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-primary/0 via-primary/0 to-primary/0 group-hover:from-primary/5 group-hover:via-transparent group-hover:to-accent/5 transition-all duration-500 pointer-events-none" />
     </Button>
   );
 }

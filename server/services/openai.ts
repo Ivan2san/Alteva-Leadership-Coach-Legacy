@@ -59,7 +59,7 @@ Key principles:
       const response = await openai.chat.completions.create({
         model: "gpt-5",
         messages: messages,
-        max_tokens: 1000,
+        max_completion_tokens: 1000,
         temperature: 0.7,
         // Vector store integration will be added in future update
       });
