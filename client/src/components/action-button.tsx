@@ -62,7 +62,7 @@ export default function ActionButton({ topic, onClick }: ActionButtonProps) {
           <h3 className="font-semibold text-foreground text-xs leading-snug tracking-wide line-clamp-2 group-hover:text-primary transition-colors duration-300">
             {config.title}
           </h3>
-          <p className="font-normal text-foreground/90 text-xs leading-normal tracking-normal line-clamp-2 group-hover:text-foreground transition-colors duration-300">
+          <p className="font-normal text-foreground text-xs leading-normal tracking-normal line-clamp-2 group-hover:text-primary transition-colors duration-300">
             {description}
           </p>
         </div>
