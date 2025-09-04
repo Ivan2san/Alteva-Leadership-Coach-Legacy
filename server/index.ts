@@ -54,32 +54,33 @@ app.use((req, res, next) => {
 
 (async () => {
   try {
-    // Add health check endpoints
-    app.get("/health", (req, res) => {
-      res.status(200).json({ 
-        status: "healthy", 
-        timestamp: new Date().toISOString(),
-        uptime: process.uptime()
-      });
-    });
-
-    // Smart root endpoint: health check for Cloud Run, React app for browsers
-    app.get("/", (req, res, next) => {
-      // Cloud Run and other automated health checks typically don't send Accept: text/html
-      const userAgent = req.get('User-Agent') || '';
-      const acceptsHtml = req.accepts('html');
-      
-      // If this looks like an automated health check request
-      if (!acceptsHtml || userAgent.includes('GoogleHC') || userAgent.includes('kube-probe') || userAgent.includes('curl')) {
-        return res.status(200).json({ 
-          status: "healthy", 
-          timestamp: new Date().toISOString(),
-          uptime: process.uptime()
-        });
+    // Health check middleware - responds immediately for deployment health checks
+    app.use("/", (req, res, next) => {
+      // Only handle GET requests to root path
+      if (req.method !== 'GET' || req.path !== '/') {
+        return next();
       }
       
-      // For browser requests, continue to serve React app
+      // Fast health check response for deployment systems
+      // These typically don't send Accept: text/html headers
+      const acceptsHtml = req.get('Accept')?.includes('text/html');
+      const userAgent = req.get('User-Agent') || '';
+      
+      // Respond immediately for health checks
+      if (!acceptsHtml || 
+          userAgent.includes('GoogleHC') || 
+          userAgent.includes('kube-probe') || 
+          userAgent.includes('curl') ||
+          userAgent.includes('Go-http-client')) {
+        return res.status(200).send("OK");
+      }
+      
+      // Continue to React app for browsers
       next();
+    });
+
+    app.get("/health", (req, res) => {
+      res.status(200).send("OK");
     });
 
     // Register routes after health checks
