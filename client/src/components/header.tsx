@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Menu, Users, Database, MessageSquare, BarChart3, FileText, Home, LogOut } from "lucide-react";
+import { Menu, Users, Database, MessageSquare, BarChart3, FileText, Home, LogOut, Settings } from "lucide-react";
 import { Link } from "wouter";
 import {
   DropdownMenu,
@@ -48,28 +48,50 @@ export default function Header({ onMenuClick }: HeaderProps) {
                     <span>Home</span>
                   </Link>
                 </DropdownMenuItem>
+                
+                {/* Show all menu items for admin */}
+                {isAdmin ? (
+                  <>
+                    <DropdownMenuItem asChild>
+                      <Link href="/prompt-library" className="flex items-center w-full">
+                        <FileText className="mr-2 h-4 w-4" />
+                        <span>Prompts</span>
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/analytics" className="flex items-center w-full">
+                        <BarChart3 className="mr-2 h-4 w-4" />
+                        <span>Analytics</span>
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/conversations" className="flex items-center w-full">
+                        <MessageSquare className="mr-2 h-4 w-4" />
+                        <span>Chats</span>
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/knowledge-base" className="flex items-center w-full">
+                        <Database className="mr-2 h-4 w-4" />
+                        <span>Knowledge</span>
+                      </Link>
+                    </DropdownMenuItem>
+                  </>
+                ) : (
+                  /* Show only Chats for regular users */
+                  <DropdownMenuItem asChild>
+                    <Link href="/conversations" className="flex items-center w-full">
+                      <MessageSquare className="mr-2 h-4 w-4" />
+                      <span>Chats</span>
+                    </Link>
+                  </DropdownMenuItem>
+                )}
+                
+                {/* Settings available for all users */}
                 <DropdownMenuItem asChild>
-                  <Link href="/prompt-library" className="flex items-center w-full">
-                    <FileText className="mr-2 h-4 w-4" />
-                    <span>Prompts</span>
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/analytics" className="flex items-center w-full">
-                    <BarChart3 className="mr-2 h-4 w-4" />
-                    <span>Analytics</span>
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/conversations" className="flex items-center w-full">
-                    <MessageSquare className="mr-2 h-4 w-4" />
-                    <span>Chats</span>
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/knowledge-base" className="flex items-center w-full">
-                    <Database className="mr-2 h-4 w-4" />
-                    <span>Knowledge</span>
+                  <Link href="/settings" className="flex items-center w-full">
+                    <Settings className="mr-2 h-4 w-4" />
+                    <span>Settings</span>
                   </Link>
                 </DropdownMenuItem>
                 

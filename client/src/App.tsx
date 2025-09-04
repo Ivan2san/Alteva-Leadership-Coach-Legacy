@@ -11,6 +11,7 @@ import KnowledgeBase from "@/pages/knowledge-base";
 import Conversations from "@/pages/conversations";
 import Analytics from "@/pages/analytics";
 import PromptLibrary from "@/pages/prompt-library";
+import Settings from "@/pages/settings";
 import Login from "@/pages/login";
 import Signup from "@/pages/signup";
 import NotFound from "@/pages/not-found";
@@ -27,6 +28,7 @@ function Router() {
       <Route path="/conversations" component={Conversations} />
       <Route path="/analytics" component={Analytics} />
       <Route path="/prompt-library" component={PromptLibrary} />
+      <Route path="/settings" component={Settings} />
       <Route component={NotFound} />
     </Switch>
   );
