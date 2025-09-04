@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
+import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,6 +17,7 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const form = useForm<LoginData>({
     resolver: zodResolver(loginSchema),
@@ -46,6 +48,9 @@ export default function LoginPage() {
       
       // Store token in localStorage
       localStorage.setItem('authToken', result.token);
+      
+      // Invalidate auth query to refresh user state immediately
+      await queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
       
       toast({
         title: "Login successful",
