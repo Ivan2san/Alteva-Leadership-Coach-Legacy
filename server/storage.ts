@@ -113,7 +113,9 @@ export class DatabaseStorage implements IStorage {
     const [user] = await db
       .update(users)
       .set({ 
-        lgp360Data: lgp360Data as any,
+        lgp360OriginalContent: lgp360Data.originalContent || null,
+        lgp360Assessment: lgp360Data.assessment || null,
+        lgp360ProfessionalReport: lgp360Data.professionalReport,
         lgp360UploadedAt: new Date(),
         updatedAt: new Date() 
       })

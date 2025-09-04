@@ -69,7 +69,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const decoded = verifyToken(token);
           if (decoded) {
             const user = await storage.getUser(decoded.userId);
-            userLGP360Data = user?.lgp360Data as LGP360ReportData | undefined;
+            if (user?.lgp360ProfessionalReport) {
+              userLGP360Data = { 
+                professionalReport: user.lgp360ProfessionalReport,
+                originalContent: user.lgp360OriginalContent || undefined,
+                assessment: user.lgp360Assessment || undefined
+              };
+            }
           }
         } catch (error) {
           // If token is invalid or user not found, continue without personalization
@@ -533,10 +539,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "No document uploaded" });
       }
 
-      // Process document with AI (user is available from middleware)
-      const summary = await openaiService.analyzeDocument(req.file.buffer, req.file.originalname, req.file.mimetype);
+      // Process document with enhanced AI analysis (user is available from middleware)
+      const analysisResult = await openaiService.analyzeDocumentEnhanced(req.file.buffer, req.file.originalname, req.file.mimetype);
       
-      res.json({ summary });
+      res.json(analysisResult);
     } catch (error) {
       console.error("Document analysis error:", error);
       res.status(500).json({ error: "Failed to analyze document" });

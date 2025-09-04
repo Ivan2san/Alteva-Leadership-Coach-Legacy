@@ -11,32 +11,40 @@ import { apiRequest } from "@/lib/queryClient";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Header from "@/components/header";
 import { BackButton } from "@/components/back-button";
-import { FileText, Save, CheckCircle2, Upload, FileCheck, Loader2 } from "lucide-react";
-import ReactMarkdown from "react-markdown";
+import { FileText, Save, CheckCircle2, Upload, FileCheck, Loader2, Eye, EyeOff } from "lucide-react";
 
 export default function LGP360ReportPage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isProcessingUpload, setIsProcessingUpload] = useState(false);
+  const [showAssessment, setShowAssessment] = useState(false);
 
   // Fetch existing LGP360 data
   const { data: userData, isLoading: isLoadingUser } = useQuery({
     queryKey: ["/api/auth/me"]
   });
 
-  const userDataTyped = userData as { user?: { lgp360Data?: LGP360ReportData; lgp360UploadedAt?: string } } | undefined;
-  const existingLGP360 = userDataTyped?.user?.lgp360Data;
-  const hasExistingReport = !!existingLGP360;
+  const userDataTyped = userData as { user?: { 
+    lgp360ProfessionalReport?: string; 
+    lgp360Assessment?: string;
+    lgp360OriginalContent?: string;
+    lgp360UploadedAt?: string; 
+  } } | undefined;
+  
+  const hasExistingReport = !!userDataTyped?.user?.lgp360ProfessionalReport;
 
   const form = useForm<LGP360ReportData>({
     resolver: zodResolver(lgp360ReportSchema),
-    defaultValues: existingLGP360 || {
-      summary: "",
+    defaultValues: {
+      originalContent: userDataTyped?.user?.lgp360OriginalContent || "",
+      assessment: userDataTyped?.user?.lgp360Assessment || "",
+      professionalReport: userDataTyped?.user?.lgp360ProfessionalReport || "",
     },
   });
 
-  const watchedSummary = form.watch("summary");
+  const watchedReport = form.watch("professionalReport");
+  const watchedAssessment = form.watch("assessment");
 
   const saveMutation = useMutation({
     mutationFn: async (data: LGP360ReportData) => {
@@ -78,12 +86,14 @@ export default function LGP360ReportPage() {
       
       return response.json();
     },
-    onSuccess: (data: { summary: string }) => {
-      // Auto-populate form with AI-generated summary
-      form.setValue("summary", data.summary);
+    onSuccess: (data: { originalContent: string; assessment: string; professionalReport: string }) => {
+      // Auto-populate form with AI-generated data
+      form.setValue("originalContent", data.originalContent);
+      form.setValue("assessment", data.assessment);
+      form.setValue("professionalReport", data.professionalReport);
       toast({
-        title: "Document Processed Successfully",
-        description: "Your professional leadership report has been generated. Review and save when ready.",
+        title: "Document Analysis Complete",
+        description: "AI has created both a coaching assessment and professional report. Review and save when ready.",
       });
       setIsProcessingUpload(false);
     },
@@ -163,7 +173,7 @@ export default function LGP360ReportPage() {
               <CardDescription className="text-base leading-relaxed">
                 {hasExistingReport 
                   ? "Upload a new document or edit your leadership profile to ensure the AI coach provides the most personalized guidance."
-                  : "Upload your leadership assessment document and let AI create a comprehensive professional report to unlock personalized coaching."
+                  : "Upload your leadership assessment document and let AI create a comprehensive analysis with both coaching assessment and professional report."
                 }
               </CardDescription>
             </CardHeader>
@@ -187,10 +197,10 @@ export default function LGP360ReportPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-blue-700 dark:text-blue-400">
                 <Upload className="h-5 w-5" />
-                Smart Document Analysis
+                Enhanced Document Analysis
               </CardTitle>
               <CardDescription className="text-blue-600 dark:text-blue-300">
-                Upload your LGP360 report, 360-degree feedback, or leadership assessment document. AI will analyze it and generate a comprehensive professional summary.
+                Upload your LGP360 report, 360-degree feedback, or leadership assessment. AI will create both a coaching assessment for development planning and a professional report for you.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -204,10 +214,10 @@ export default function LGP360ReportPage() {
                       <Loader2 className="h-12 w-12 text-blue-500 animate-spin" />
                       <div>
                         <p className="font-medium text-blue-700 dark:text-blue-300">
-                          AI is analyzing your document...
+                          AI is creating comprehensive analysis...
                         </p>
                         <p className="text-sm text-blue-600 dark:text-blue-400 mt-1">
-                          Creating professional leadership report
+                          Generating coaching assessment and professional report
                         </p>
                       </div>
                     </div>
@@ -242,70 +252,113 @@ export default function LGP360ReportPage() {
             </CardContent>
           </Card>
 
-          {/* Professional Report Display */}
+          {/* Professional Report */}
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <Card>
                 <CardHeader>
                   <CardTitle>Professional Leadership Report</CardTitle>
                   <CardDescription>
-                    {watchedSummary 
-                      ? "Review your AI-generated leadership profile and save when ready."
+                    {watchedReport 
+                      ? "Review your professional leadership report and save when ready."
                       : "Upload a document above to generate your professional leadership report."
                     }
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  {watchedSummary && (
+                  {watchedReport && (
                     <div className="border rounded-lg p-6 bg-gray-50 dark:bg-gray-900/50">
-                      <h3 className="font-semibold text-lg mb-4">Generated Report Preview</h3>
-                      <div className="prose prose-sm dark:prose-invert max-w-none">
-                        <ReactMarkdown>{watchedSummary}</ReactMarkdown>
+                      <h3 className="font-semibold text-lg mb-4">Your Professional Report</h3>
+                      <div className="prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap">
+                        {watchedReport}
                       </div>
                     </div>
                   )}
 
                   <FormField
                     control={form.control}
-                    name="summary"
+                    name="professionalReport"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Leadership Profile Summary</FormLabel>
+                        <FormLabel>Professional Report</FormLabel>
                         <FormControl>
                           <Textarea
-                            placeholder="Your professional leadership report will appear here after document upload, or you can create one manually..."
+                            placeholder="Your professional leadership report will appear here after document upload..."
                             className="min-h-[200px] resize-y"
                             {...field}
-                            data-testid="textarea-summary"
+                            data-testid="textarea-professional-report"
                           />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-
-                  <div className="flex gap-3">
-                    <Button 
-                      type="submit" 
-                      disabled={saveMutation.isPending || !watchedSummary}
-                      className="flex-1"
-                      data-testid="button-save-report"
-                    >
-                      {saveMutation.isPending ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Saving...
-                        </>
-                      ) : (
-                        <>
-                          <Save className="mr-2 h-4 w-4" />
-                          Save Leadership Report
-                        </>
-                      )}
-                    </Button>
-                  </div>
                 </CardContent>
               </Card>
+
+              {/* Coaching Assessment (Expandable) */}
+              {watchedAssessment && (
+                <Card>
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <CardTitle>Coaching Assessment</CardTitle>
+                        <CardDescription>
+                          Detailed coaching analysis for development planning
+                        </CardDescription>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setShowAssessment(!showAssessment)}
+                      >
+                        {showAssessment ? (
+                          <>
+                            <EyeOff className="h-4 w-4 mr-2" />
+                            Hide
+                          </>
+                        ) : (
+                          <>
+                            <Eye className="h-4 w-4 mr-2" />
+                            View Assessment
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  {showAssessment && (
+                    <CardContent>
+                      <div className="border rounded-lg p-6 bg-amber-50 dark:bg-amber-950/20">
+                        <div className="prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap">
+                          {watchedAssessment}
+                        </div>
+                      </div>
+                    </CardContent>
+                  )}
+                </Card>
+              )}
+
+              <div className="flex gap-3">
+                <Button 
+                  type="submit" 
+                  disabled={saveMutation.isPending || !watchedReport}
+                  className="flex-1"
+                  data-testid="button-save-report"
+                >
+                  {saveMutation.isPending ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="mr-2 h-4 w-4" />
+                      Save Leadership Profile
+                    </>
+                  )}
+                </Button>
+              </div>
             </form>
           </Form>
         </div>
