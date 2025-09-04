@@ -12,7 +12,7 @@ export default function PromptCard({ prompt, index, onClick }: PromptCardProps) 
   return (
     <Button
       variant="outline"
-      className="w-full bg-card hover:bg-accent/5 border border-border rounded-lg p-4 text-left transition-all duration-200 button-hover group h-auto"
+      className="w-full bg-card hover:bg-accent/5 border border-border rounded-lg p-4 text-left transition-all duration-200 button-hover group min-h-[100px] h-auto"
       onClick={() => onClick(prompt.text)}
       data-testid={`button-prompt-${index}`}
     >
@@ -22,10 +22,10 @@ export default function PromptCard({ prompt, index, onClick }: PromptCardProps) 
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between mb-1">
-            <span className="text-xs font-medium text-accent">{prompt.category}</span>
+            <span className="text-xs font-medium text-accent truncate">{prompt.category}</span>
             <ArrowRight className="text-muted-foreground group-hover:text-foreground transition-colors text-xs flex-shrink-0" size={12} />
           </div>
-          <p className="text-sm text-foreground leading-relaxed text-left">
+          <p className="text-xs text-foreground leading-normal text-left line-clamp-3">
             {prompt.text}
           </p>
         </div>

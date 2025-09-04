@@ -29,14 +29,14 @@ const iconComponents: Record<string, LucideIcon> = {
 };
 
 const descriptions: Record<string, string> = {
-  'growth-profile': 'Assess strengths & growth areas',
-  'red-green-zones': 'Identify effective behaviors',
+  'growth-profile': 'Assess strengths & areas',
+  'red-green-zones': 'Identify key behaviors',
   'big-practice': 'Focus on biggest impact',
-  '360-report': 'Interpret feedback results',
-  'growth-values': 'Align actions with values',
-  'growth-matrix': 'Integrate development areas',
-  'oora-conversation': 'Structure important talks',
-  'daily-checkin': 'Reflect on daily progress'
+  '360-report': 'Interpret feedback data',
+  'growth-values': 'Align actions & values',
+  'growth-matrix': 'Integrate development',
+  'oora-conversation': 'Structure conversations',
+  'daily-checkin': 'Reflect on progress'
 };
 
 export default function ActionButton({ topic, onClick }: ActionButtonProps) {
@@ -50,7 +50,7 @@ export default function ActionButton({ topic, onClick }: ActionButtonProps) {
   return (
     <Button
       variant="outline"
-      className="group relative bg-gradient-to-br from-card to-card/50 hover:from-primary/5 hover:to-accent/10 border border-border/50 hover:border-primary/20 rounded-xl p-6 text-left transition-all duration-300 ease-in-out min-h-[140px] flex flex-col justify-between h-auto shadow-sm hover:shadow-md hover:-translate-y-0.5"
+      className="group relative bg-gradient-to-br from-card to-card/50 hover:from-primary/5 hover:to-accent/10 border border-border/50 hover:border-primary/20 rounded-xl p-4 text-left transition-all duration-300 ease-in-out min-h-[160px] flex flex-col justify-between h-auto shadow-sm hover:shadow-md hover:-translate-y-0.5"
       onClick={() => onClick(topic)}
       data-testid={`button-action-${topic}`}
     >
@@ -58,11 +58,11 @@ export default function ActionButton({ topic, onClick }: ActionButtonProps) {
         <div className="w-12 h-12 bg-gradient-to-br from-primary/10 to-primary/5 group-hover:from-primary/15 group-hover:to-primary/10 rounded-xl flex items-center justify-center transition-all duration-300">
           <IconComponent className="text-primary w-6 h-6 group-hover:scale-110 transition-transform duration-300" />
         </div>
-        <div className="space-y-1">
-          <h3 className="font-semibold text-foreground text-sm leading-tight group-hover:text-primary transition-colors duration-300">
+        <div className="space-y-2">
+          <h3 className="font-medium text-foreground text-xs leading-snug tracking-wide line-clamp-2 group-hover:text-primary transition-colors duration-300">
             {config.title}
           </h3>
-          <p className="text-xs text-muted-foreground leading-relaxed group-hover:text-foreground/80 transition-colors duration-300">
+          <p className="font-normal text-foreground/70 text-xs leading-normal tracking-normal line-clamp-2 group-hover:text-foreground/80 transition-colors duration-300">
             {description}
           </p>
         </div>

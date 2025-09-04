@@ -11,7 +11,7 @@ export interface TopicConfiguration {
 
 export const topicConfigurations: Record<string, TopicConfiguration> = {
   'growth-profile': {
-    title: 'Leadership Growth Profile',
+    title: 'Growth Profile',
     icon: 'fa-user-chart',
     prompts: [
       {
@@ -33,7 +33,7 @@ export const topicConfigurations: Record<string, TopicConfiguration> = {
     ]
   },
   'red-green-zones': {
-    title: 'Red & Green Zone Behaviors',
+    title: 'Red & Green Zones',
     icon: 'fa-traffic-light',
     prompts: [
       {
@@ -99,7 +99,7 @@ export const topicConfigurations: Record<string, TopicConfiguration> = {
     ]
   },
   'growth-values': {
-    title: 'Leadership Growth Values',
+    title: 'Growth Values',
     icon: 'fa-heart',
     prompts: [
       {
@@ -121,7 +121,7 @@ export const topicConfigurations: Record<string, TopicConfiguration> = {
     ]
   },
   'growth-matrix': {
-    title: 'Leadership Growth Matrix',
+    title: 'Growth Matrix',
     icon: 'fa-th',
     prompts: [
       {
@@ -143,7 +143,7 @@ export const topicConfigurations: Record<string, TopicConfiguration> = {
     ]
   },
   'oora-conversation': {
-    title: 'OORA Conversation Prep',
+    title: 'OORA Prep',
     icon: 'fa-comments',
     prompts: [
       {
