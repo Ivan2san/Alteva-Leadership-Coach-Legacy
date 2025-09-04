@@ -39,7 +39,7 @@ export function registerAuthRoutes(app: Express) {
       res.cookie('authToken', token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
+        sameSite: 'lax',
         maxAge: 24 * 60 * 60 * 1000 // 24 hours
       });
 
@@ -78,7 +78,7 @@ export function registerAuthRoutes(app: Express) {
       res.cookie('authToken', token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
+        sameSite: 'lax',
         maxAge: 24 * 60 * 60 * 1000 // 24 hours
       });
 
@@ -100,24 +100,32 @@ export function registerAuthRoutes(app: Express) {
   // Get current user endpoint
   app.get("/api/auth/me", async (req, res) => {
     try {
+      console.log("Auth check - cookies:", req.cookies);
       const token = req.cookies?.authToken;
+      console.log("Auth check - token found:", !!token);
+      
       if (!token) {
         return res.status(401).json({ error: "Not authenticated" });
       }
 
       const { verifyToken } = await import("./auth");
       const decoded = verifyToken(token);
+      console.log("Auth check - token decoded:", !!decoded);
+      
       if (!decoded) {
         return res.status(401).json({ error: "Invalid token" });
       }
 
       const user = await storage.getUser(decoded.userId);
+      console.log("Auth check - user found:", !!user);
+      
       if (!user) {
         return res.status(401).json({ error: "User not found" });
       }
 
       // Return user without password
       const { password: _, ...userWithoutPassword } = user;
+      console.log("Auth check - success for user:", user.email);
       res.json({ user: userWithoutPassword });
     } catch (error) {
       console.error("Get current user error:", error);
