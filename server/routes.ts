@@ -8,7 +8,8 @@ import {
   insertPromptTemplateSchema,
   lgp360ReportSchema,
   messageSchema, 
-  type Message
+  type Message,
+  type LGP360ReportData
 } from "@shared/schema";
 import { ObjectStorageService } from "./objectStorage";
 import { registerAuthRoutes } from "./auth-routes";
@@ -49,7 +50,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const jwt = await import('jsonwebtoken');
           const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback-secret') as { userId: string };
           const user = await storage.getUser(decoded.userId);
-          userLGP360Data = user?.lgp360Data;
+          userLGP360Data = user?.lgp360Data as LGP360ReportData | undefined;
         } catch (error) {
           // If token is invalid or user not found, continue without personalization
           console.log("Could not get user data for personalization:", error);

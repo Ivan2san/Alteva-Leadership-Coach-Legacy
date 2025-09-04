@@ -86,20 +86,26 @@ export default function Header({ onMenuClick }: HeaderProps) {
                     </Link>
                   </DropdownMenuItem>
                 )}
+
+                {/* Regular users: LGP360 Report and Guide */}
+                {user && user.role === 'user' && (
+                  <>
+                    <DropdownMenuItem asChild>
+                      <Link href="/lgp360" className="flex items-center w-full">
+                        <ClipboardList className="mr-2 h-4 w-4" />
+                        <span>LGP360 Report</span>
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/guide" className="flex items-center w-full">
+                        <BookOpen className="mr-2 h-4 w-4" />
+                        <span>Guide</span>
+                      </Link>
+                    </DropdownMenuItem>
+                  </>
+                )}
                 
-                {/* Guide, LGP360 Report, and Settings available for all users */}
-                <DropdownMenuItem asChild>
-                  <Link href="/lgp360" className="flex items-center w-full">
-                    <ClipboardList className="mr-2 h-4 w-4" />
-                    <span>LGP360 Report</span>
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/guide" className="flex items-center w-full">
-                    <BookOpen className="mr-2 h-4 w-4" />
-                    <span>Guide</span>
-                  </Link>
-                </DropdownMenuItem>
+                {/* Settings available for all users */}
                 <DropdownMenuItem asChild>
                   <Link href="/settings" className="flex items-center w-full">
                     <Settings className="mr-2 h-4 w-4" />
