@@ -36,10 +36,12 @@ export function registerAuthRoutes(app: Express) {
       const token = generateToken(user.id);
 
       // Set cookie
+      console.log("Setting cookie for signup:", { userId: user.id, token: token.slice(0, 20) + "..." });
       res.cookie('authToken', token, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
+        secure: false, // Set to false for development
         sameSite: 'lax',
+        path: '/',
         maxAge: 24 * 60 * 60 * 1000 // 24 hours
       });
 
@@ -75,10 +77,12 @@ export function registerAuthRoutes(app: Express) {
       const token = generateToken(user.id);
 
       // Set cookie
+      console.log("Setting cookie for login:", { userId: user.id, token: token.slice(0, 20) + "..." });
       res.cookie('authToken', token, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
+        secure: false, // Set to false for development
         sameSite: 'lax',
+        path: '/',
         maxAge: 24 * 60 * 60 * 1000 // 24 hours
       });
 

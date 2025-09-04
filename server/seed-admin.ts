@@ -2,8 +2,8 @@ import { storage } from "./storage";
 
 const ADMIN_USER = {
   email: "admin@leadership-coach.app",
-  password: "admin123",
-  fullName: "Admin User",
+  password: "LeaderCoach2025#Admin",
+  fullName: "Admin User", 
   role: "admin" as const,
 };
 
@@ -104,7 +104,9 @@ export async function migrateExistingData(adminUserId: string) {
 if (import.meta.url === `file://${process.argv[1]}`) {
   seedAdminUser()
     .then((adminUser) => {
-      return migrateExistingData(adminUser.id);
+      if (adminUser) {
+        return migrateExistingData(adminUser.id);
+      }
     })
     .then(() => {
       process.exit(0);
