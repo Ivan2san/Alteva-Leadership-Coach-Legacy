@@ -153,3 +153,66 @@
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+
+/* Enhanced chat message styling */
+.chat-message .prose {
+  line-height: 1.7;
+}
+
+.chat-message .prose h2 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+  color: inherit;
+}
+
+.chat-message .prose h3 {
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-top: 0.75rem;
+  margin-bottom: 0.5rem;
+  color: inherit;
+}
+
+.chat-message .prose p {
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.chat-message .prose ul, 
+.chat-message .prose ol {
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
+  padding-left: 1.25rem;
+}
+
+.chat-message .prose li {
+  margin-top: 0.25rem;
+  margin-bottom: 0.25rem;
+}
+
+.chat-message .prose blockquote {
+  border-left: 3px solid hsl(var(--primary));
+  padding-left: 1rem;
+  margin: 1rem 0;
+  font-style: italic;
+  background: hsl(var(--muted) / 0.3);
+  border-radius: 0 0.375rem 0.375rem 0;
+  padding: 0.75rem 1rem;
+}
+
+.chat-message .prose strong {
+  font-weight: 600;
+  color: inherit;
+}
+
+.chat-message .prose em {
+  font-style: italic;
+  color: inherit;
+}
+
+.chat-message .prose code {
+  font-size: 0.8rem;
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace;
+}

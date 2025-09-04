@@ -111,7 +111,7 @@ export default function Chat({ params }: ChatProps) {
         </div>
 
         {/* Chat Messages Container */}
-        <div className="space-y-4 mb-6 max-h-[60vh] overflow-y-auto" data-testid="chat-messages">
+        <div className="space-y-6 mb-6 max-h-[60vh] overflow-y-auto px-2" data-testid="chat-messages">
           {messages.map((message) => (
             <ChatMessage key={message.id} message={message} />
           ))}

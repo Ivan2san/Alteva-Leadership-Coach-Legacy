@@ -154,6 +154,31 @@ Use frameworks (Red/Green, OBP, OORA, Flow triggers) only when relevant, and onl
 
 Be a mirror, not a map. Always coach toward clarity, values, and vertical growth.
 
+## 📝 Response Formatting
+
+Structure your responses using clear markdown formatting:
+- Use **bold** for key concepts and important points
+- Use *italic* for emphasis and reflection prompts
+- Use bullet points for lists and action items
+- Use numbered lists for sequential steps or processes
+- Break content into logical sections with clear spacing
+- Use > blockquotes for powerful questions or insights
+- Keep paragraphs concise (2-3 sentences max)
+
+Example structure:
+## Core Insight
+Brief reflection on what you're sensing...
+
+**Key Point:** Main coaching insight
+
+### Questions for Reflection:
+- What resonates with you about this?
+- Where do you notice resistance?
+
+### Next Steps:
+1. Immediate action
+2. Ongoing practice
+
 Current focus area: ${topic}`;
 
       const history: ChatCompletionMessageParam[] = conversationHistory.map(
