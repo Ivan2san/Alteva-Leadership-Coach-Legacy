@@ -1,6 +1,12 @@
 import { Button } from "@/components/ui/button";
-import { Menu, Users, Database, MessageSquare, BarChart3, FileText } from "lucide-react";
+import { Menu, Users, Database, MessageSquare, BarChart3, FileText, Home } from "lucide-react";
 import { Link } from "wouter";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface HeaderProps {
   onMenuClick?: () => void;
@@ -19,66 +25,51 @@ export default function Header({ onMenuClick }: HeaderProps) {
               <h1 className="text-lg font-semibold text-foreground hover:text-primary cursor-pointer">Leadership Coach</h1>
             </Link>
           </div>
-          <div className="flex items-center space-x-1">
-            <Link href="/">
-              <Button 
-                variant="ghost" 
-                className="flex flex-col items-center px-2 py-1 h-auto"
-                data-testid="home-link"
-              >
-                <Users className="text-muted-foreground" size={16} />
-                <span className="text-xs mt-0.5">Home</span>
-              </Button>
-            </Link>
-            <Link href="/prompt-library">
-              <Button 
-                variant="ghost" 
-                className="flex flex-col items-center px-2 py-1 h-auto"
-                data-testid="prompt-library-link"
-              >
-                <FileText className="text-muted-foreground" size={16} />
-                <span className="text-xs mt-0.5">Prompts</span>
-              </Button>
-            </Link>
-            <Link href="/analytics">
-              <Button 
-                variant="ghost" 
-                className="flex flex-col items-center px-2 py-1 h-auto"
-                data-testid="analytics-link"
-              >
-                <BarChart3 className="text-muted-foreground" size={16} />
-                <span className="text-xs mt-0.5">Analytics</span>
-              </Button>
-            </Link>
-            <Link href="/conversations">
-              <Button 
-                variant="ghost" 
-                className="flex flex-col items-center px-2 py-1 h-auto"
-                data-testid="conversations-link"
-              >
-                <MessageSquare className="text-muted-foreground" size={16} />
-                <span className="text-xs mt-0.5">Chats</span>
-              </Button>
-            </Link>
-            <Link href="/knowledge-base">
-              <Button 
-                variant="ghost" 
-                className="flex flex-col items-center px-2 py-1 h-auto"
-                data-testid="knowledge-base-link"
-              >
-                <Database className="text-muted-foreground" size={16} />
-                <span className="text-xs mt-0.5">Knowledge</span>
-              </Button>
-            </Link>
-            <Button 
-              variant="ghost" 
-              className="flex flex-col items-center px-2 py-1 h-auto"
-              onClick={onMenuClick}
-              data-testid="button-menu"
-            >
-              <Menu className="text-muted-foreground" size={16} />
-              <span className="text-xs mt-0.5">Menu</span>
-            </Button>
+          <div className="flex items-center">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  className="flex flex-col items-center px-2 py-1 h-auto"
+                  data-testid="button-menu"
+                >
+                  <Menu className="text-muted-foreground" size={16} />
+                  <span className="text-xs mt-0.5">Menu</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuItem asChild>
+                  <Link href="/" className="flex items-center w-full">
+                    <Home className="mr-2 h-4 w-4" />
+                    <span>Home</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/prompt-library" className="flex items-center w-full">
+                    <FileText className="mr-2 h-4 w-4" />
+                    <span>Prompts</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/analytics" className="flex items-center w-full">
+                    <BarChart3 className="mr-2 h-4 w-4" />
+                    <span>Analytics</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/conversations" className="flex items-center w-full">
+                    <MessageSquare className="mr-2 h-4 w-4" />
+                    <span>Chats</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/knowledge-base" className="flex items-center w-full">
+                    <Database className="mr-2 h-4 w-4" />
+                    <span>Knowledge</span>
+                  </Link>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </div>
