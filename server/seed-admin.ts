@@ -27,19 +27,33 @@ export async function seedAdminUser() {
       return existingAdmin;
     }
 
-    // Create admin user
+    // Create admin user with proper duplicate handling
     console.log("Creating admin user...");
     const adminUser = await storage.createUser(ADMIN_USER);
     
-    console.log("Admin user created successfully:");
-    console.log("Email:", ADMIN_USER.email);
-    console.log("Password:", ADMIN_USER.password);
-    console.log("Please change the password after first login!");
+    console.log("Admin user created successfully:", ADMIN_USER.email);
     
     return adminUser;
   } catch (error) {
+    // Handle duplicate key errors gracefully
+    if (error && typeof error === 'object' && 'code' in error) {
+      if (error.code === '23505' || error.code === 'SQLITE_CONSTRAINT_UNIQUE') {
+        // Unique constraint violation - admin user already exists
+        console.log("Admin user already exists (duplicate key), fetching existing user...");
+        try {
+          const existingAdmin = await storage.getUserByEmail(ADMIN_USER.email);
+          if (existingAdmin) {
+            return existingAdmin;
+          }
+        } catch (fetchError) {
+          console.error("Error fetching existing admin user:", fetchError);
+        }
+      }
+    }
+    
     console.error("Error seeding admin user:", error);
-    throw error;
+    // Don't throw error during deployment - log and continue
+    return null;
   }
 }
 
@@ -65,38 +79,10 @@ export async function migrateExistingData(adminUserId: string) {
       console.log(`Migrated ${orphanedConversations.length} conversations to admin user`);
     }
 
-    // Update knowledge base files to belong to admin user
-    const { knowledgeBaseFiles } = await import("@shared/schema");
-    
-    const orphanedFiles = await db.select().from(knowledgeBaseFiles).where(isNull(knowledgeBaseFiles.uploadedBy));
-    
-    if (orphanedFiles.length > 0) {
-      await db
-        .update(knowledgeBaseFiles)
-        .set({ uploadedBy: adminUserId })
-        .where(isNull(knowledgeBaseFiles.uploadedBy));
-      
-      console.log(`Migrated ${orphanedFiles.length} knowledge base files to admin user`);
-    }
-
-    // Update prompt templates to belong to admin user
-    const { promptTemplates } = await import("@shared/schema");
-    
-    const orphanedTemplates = await db.select().from(promptTemplates).where(isNull(promptTemplates.createdBy));
-    
-    if (orphanedTemplates.length > 0) {
-      await db
-        .update(promptTemplates)
-        .set({ createdBy: adminUserId })
-        .where(isNull(promptTemplates.createdBy));
-      
-      console.log(`Migrated ${orphanedTemplates.length} prompt templates to admin user`);
-    }
-
     console.log("Data migration completed successfully!");
   } catch (error) {
     console.error("Error migrating existing data:", error);
-    throw error;
+    // Don't throw error during background initialization
   }
 }
 

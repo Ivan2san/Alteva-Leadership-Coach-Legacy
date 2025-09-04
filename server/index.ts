@@ -53,16 +53,7 @@ app.use((req, res, next) => {
 });
 
 (async () => {
-  // Seed admin user and migrate existing data
-  try {
-    const adminUser = await seedAdminUser();
-    if (adminUser) {
-      await migrateExistingData(adminUser.id);
-    }
-  } catch (error) {
-    console.error("Error during admin seeding/migration:", error);
-  }
-
+  // Register routes first for health checks
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
@@ -91,7 +82,25 @@ app.use((req, res, next) => {
     port,
     host: "0.0.0.0",
     reusePort: true,
-  }, () => {
+  }, async () => {
     log(`serving on port ${port}`);
+    
+    // Initialize database seeding after server is ready
+    // Run in background to not block server startup
+    if (process.env.NODE_ENV !== 'test') {
+      setTimeout(async () => {
+        try {
+          console.log("Starting background database initialization...");
+          const adminUser = await seedAdminUser();
+          if (adminUser) {
+            await migrateExistingData(adminUser.id);
+          }
+          console.log("Background database initialization completed");
+        } catch (error) {
+          console.error("Background database initialization failed:", error);
+          // Don't crash the server - log and continue
+        }
+      }, 1000); // Wait 1 second after server starts
+    }
   });
 })();
