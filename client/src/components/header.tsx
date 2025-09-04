@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Menu, Users, Database, MessageSquare, BarChart3, FileText, Home, LogOut, Settings, BookOpen } from "lucide-react";
+import { Menu, Users, Database, MessageSquare, BarChart3, FileText, Home, LogOut, Settings, BookOpen, ClipboardList } from "lucide-react";
 import { Link } from "wouter";
 import {
   DropdownMenu,
@@ -87,7 +87,13 @@ export default function Header({ onMenuClick }: HeaderProps) {
                   </DropdownMenuItem>
                 )}
                 
-                {/* Guide and Settings available for all users */}
+                {/* Guide, LGP360 Report, and Settings available for all users */}
+                <DropdownMenuItem asChild>
+                  <Link href="/lgp360" className="flex items-center w-full">
+                    <ClipboardList className="mr-2 h-4 w-4" />
+                    <span>LGP360 Report</span>
+                  </Link>
+                </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                   <Link href="/guide" className="flex items-center w-full">
                     <BookOpen className="mr-2 h-4 w-4" />

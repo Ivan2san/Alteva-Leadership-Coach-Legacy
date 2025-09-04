@@ -9,6 +9,9 @@ export const users = pgTable("users", {
   password: text("password").notNull(),
   fullName: text("full_name").notNull(),
   role: text("role").notNull().default('user'), // 'user' | 'admin'
+  // LGP360 Report Fields
+  lgp360Data: jsonb("lgp360_data"), // Complete LGP360 report data
+  lgp360UploadedAt: timestamp("lgp360_uploaded_at"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -81,6 +84,27 @@ export const loginSchema = z.object({
   password: z.string().min(1, "Password is required"),
 });
 
+// LGP360 Report Schema
+export const lgp360ReportSchema = z.object({
+  currentRole: z.string().min(1, "Current role is required"),
+  organization: z.string().min(1, "Organization is required"),
+  yearsInLeadership: z.number().min(0, "Years in leadership must be positive"),
+  teamSize: z.number().min(0, "Team size must be positive"),
+  industryExperience: z.string().min(1, "Industry experience is required"),
+  primaryChallenges: z.array(z.string()).min(1, "At least one challenge must be selected"),
+  leadershipGoals: z.array(z.string()).min(1, "At least one goal must be selected"),
+  communicationStyle: z.string().min(1, "Communication style is required"),
+  decisionMakingApproach: z.string().min(1, "Decision making approach is required"),
+  conflictResolutionStyle: z.string().min(1, "Conflict resolution style is required"),
+  motivationFactors: z.array(z.string()).min(1, "At least one motivation factor must be selected"),
+  learningPreferences: z.array(z.string()).min(1, "At least one learning preference must be selected"),
+  strengths: z.array(z.string()).min(1, "At least one strength must be listed"),
+  growthAreas: z.array(z.string()).min(1, "At least one growth area must be listed"),
+  previousCoaching: z.string().min(1, "Previous coaching experience is required"),
+  expectations: z.string().min(1, "Expectations are required"),
+  additionalNotes: z.string().optional(),
+});
+
 export const insertConversationSchema = createInsertSchema(conversations).omit({
   id: true,
   createdAt: true,
@@ -105,6 +129,7 @@ export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 export type SignupData = z.infer<typeof signupSchema>;
 export type LoginData = z.infer<typeof loginSchema>;
+export type LGP360ReportData = z.infer<typeof lgp360ReportSchema>;
 export type Conversation = typeof conversations.$inferSelect;
 export type InsertConversation = z.infer<typeof insertConversationSchema>;
 export type KnowledgeBaseFile = typeof knowledgeBaseFiles.$inferSelect;

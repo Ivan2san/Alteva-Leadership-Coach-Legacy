@@ -2,7 +2,14 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { openaiService } from "./services/openai";
-import { insertConversationSchema, messageSchema, insertKnowledgeBaseFileSchema, insertPromptTemplateSchema } from "@shared/schema";
+import { 
+  insertConversationSchema, 
+  insertKnowledgeBaseFileSchema,
+  insertPromptTemplateSchema,
+  lgp360ReportSchema,
+  messageSchema, 
+  type Message
+} from "@shared/schema";
 import { ObjectStorageService } from "./objectStorage";
 import { registerAuthRoutes } from "./auth-routes";
 import cookieParser from "cookie-parser";
@@ -33,10 +40,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
+      // Get user LGP360 data for personalization
+      let userLGP360Data;
+      const authHeader = req.headers.authorization;
+      if (authHeader?.startsWith('Bearer ')) {
+        try {
+          const token = authHeader.substring(7);
+          const jwt = await import('jsonwebtoken');
+          const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback-secret') as { userId: string };
+          const user = await storage.getUser(decoded.userId);
+          userLGP360Data = user?.lgp360Data;
+        } catch (error) {
+          // If token is invalid or user not found, continue without personalization
+          console.log("Could not get user data for personalization:", error);
+        }
+      }
+
       const response = await openaiService.getTopicSpecificResponse(
         message, 
         topic, 
-        conversationHistory || []
+        conversationHistory || [],
+        userLGP360Data
       );
 
       res.json(response);
@@ -455,6 +479,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (error instanceof Error && error.name === "ObjectNotFoundError") {
         return res.status(404).json({ error: "File not found" });
       }
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // LGP360 Report endpoints
+  app.post("/api/lgp360", async (req, res) => {
+    try {
+      // Get user from token
+      const authHeader = req.headers.authorization;
+      if (!authHeader?.startsWith('Bearer ')) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+
+      const token = authHeader.substring(7);
+      const jwt = await import('jsonwebtoken');
+      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback-secret') as { userId: string };
+      
+      // Validate LGP360 data
+      const validationResult = lgp360ReportSchema.safeParse(req.body);
+      if (!validationResult.success) {
+        return res.status(400).json({ error: "Invalid LGP360 data", details: validationResult.error.errors });
+      }
+
+      // Save LGP360 data to user profile
+      const updatedUser = await storage.updateUserLGP360(decoded.userId, validationResult.data);
+      if (!updatedUser) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      res.json({ success: true, message: "LGP360 report saved successfully" });
+    } catch (error) {
+      console.error("Save LGP360 report error:", error);
       res.status(500).json({ error: "Internal server error" });
     }
   });

@@ -1,6 +1,7 @@
 // openai.ts
 import OpenAI from "openai";
 import type { ChatCompletionMessageParam } from "openai/resources/chat/completions";
+import type { LGP360ReportData } from "@shared/schema";
 
 const apiKey =
   process.env.OPENAI_API_KEY ??
@@ -142,7 +143,8 @@ export class OpenAIService {
   async getLeadershipResponse(
     userPrompt: string,
     topic: string,
-    conversationHistory: HistoryItem[] = []
+    conversationHistory: HistoryItem[] = [],
+    userLGP360Data?: LGP360ReportData
   ): Promise<ChatResponse> {
     try {
       const systemPrompt = `# 🧭 Alteva Coaching Companion
@@ -269,7 +271,9 @@ Brief reflection on what you're sensing...
 1. Immediate action
 2. Ongoing practice
 
-Current focus area: ${topic}`;
+Current focus area: ${topic}
+
+${userLGP360Data ? this.generatePersonalizationContext(userLGP360Data) : ''}`;
 
       const history: ChatCompletionMessageParam[] = conversationHistory.map(
         (msg) => ({
@@ -307,10 +311,57 @@ Current focus area: ${topic}`;
     }
   }
 
+  private generatePersonalizationContext(lgp360Data: LGP360ReportData): string {
+    return `
+## 👤 USER PERSONALIZATION CONTEXT
+
+**Leadership Profile:**
+- **Role:** ${lgp360Data.currentRole} at ${lgp360Data.organization}
+- **Experience:** ${lgp360Data.yearsInLeadership} years in leadership, managing ${lgp360Data.teamSize} team members
+- **Industry:** ${lgp360Data.industryExperience}
+
+**Primary Challenges:** ${lgp360Data.primaryChallenges.join(', ')}
+
+**Development Goals:** ${lgp360Data.leadershipGoals.join(', ')}
+
+**Leadership Style:**
+- **Communication:** ${lgp360Data.communicationStyle}
+- **Decision Making:** ${lgp360Data.decisionMakingApproach}
+- **Conflict Resolution:** ${lgp360Data.conflictResolutionStyle}
+
+**Motivation Factors:** ${lgp360Data.motivationFactors.join(', ')}
+
+**Learning Preferences:** ${lgp360Data.learningPreferences.join(', ')}
+
+**Strengths:** ${lgp360Data.strengths.join(', ')}
+
+**Growth Areas:** ${lgp360Data.growthAreas.join(', ')}
+
+**Coaching Experience:** ${lgp360Data.previousCoaching}
+
+**Expectations:** ${lgp360Data.expectations}
+
+${lgp360Data.additionalNotes ? `**Additional Notes:** ${lgp360Data.additionalNotes}` : ''}
+
+**🎯 PERSONALIZATION INSTRUCTIONS:**
+Use this profile information to:
+1. **Tailor coaching questions** to their specific challenges and goals
+2. **Reference their communication/decision-making style** when suggesting approaches
+3. **Build on their identified strengths** while addressing growth areas
+4. **Match their learning preferences** in how you present insights
+5. **Connect to their industry context** and role-specific challenges
+6. **Acknowledge their experience level** and team size in your coaching
+7. **Reference their motivations** to increase engagement and relevance
+
+Make coaching personal and relevant to their unique leadership context while maintaining Alteva coaching methodology.
+`;
+  }
+
   async getTopicSpecificResponse(
     userInput: string,
     topic: string,
-    conversationHistory: HistoryItem[] = []
+    conversationHistory: HistoryItem[] = [],
+    userLGP360Data?: LGP360ReportData
   ): Promise<ChatResponse> {
     const altevaTopicInstructions: Record<string, string> = {
       "growth-profile":
@@ -337,7 +388,8 @@ Current focus area: ${topic}`;
     return this.getLeadershipResponse(
       userInput,
       `${topic}: ${altevaInstruction}`,
-      conversationHistory
+      conversationHistory,
+      userLGP360Data
     );
   }
 }

@@ -3,6 +3,7 @@ import {
   type InsertUser, 
   type SignupData,
   type LoginData,
+  type LGP360ReportData,
   type Conversation, 
   type InsertConversation,
   type KnowledgeBaseFile,
@@ -26,6 +27,7 @@ export interface IStorage {
   createUser(userData: Pick<SignupData, 'email' | 'password' | 'fullName' | 'role'>): Promise<User>;
   validateLogin(email: string, password: string): Promise<User | null>;
   updateUser(id: string, updates: Partial<User>): Promise<User | undefined>;
+  updateUserLGP360(id: string, lgp360Data: LGP360ReportData): Promise<User | undefined>;
   getAllUsers(): Promise<User[]>;
   
   // Conversation operations
@@ -102,6 +104,19 @@ export class DatabaseStorage implements IStorage {
     const [user] = await db
       .update(users)
       .set({ ...updates, updatedAt: new Date() })
+      .where(eq(users.id, id))
+      .returning();
+    return user;
+  }
+
+  async updateUserLGP360(id: string, lgp360Data: LGP360ReportData): Promise<User | undefined> {
+    const [user] = await db
+      .update(users)
+      .set({ 
+        lgp360Data: lgp360Data as any,
+        lgp360UploadedAt: new Date(),
+        updatedAt: new Date() 
+      })
       .where(eq(users.id, id))
       .returning();
     return user;
