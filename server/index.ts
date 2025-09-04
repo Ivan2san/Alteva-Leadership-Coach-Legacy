@@ -52,8 +52,30 @@ app.use((req, res, next) => {
   next();
 });
 
+// Add process debugging for deployment troubleshooting
+process.on('exit', (code) => {
+  console.log(`Process exiting with code: ${code}`);
+});
+
+process.on('beforeExit', (code) => {
+  console.log(`Process beforeExit with code: ${code}`);
+});
+
+process.on('uncaughtException', (error) => {
+  console.error('Uncaught Exception:', error);
+  process.exit(1);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+  process.exit(1);
+});
+
+console.log('Starting server initialization...');
+
 (async () => {
   try {
+    console.log('Inside async IIFE...');
     // Health check middleware - responds immediately for deployment health checks
     app.use("/", (req, res, next) => {
       // Only handle GET requests to root path
@@ -112,40 +134,48 @@ app.use((req, res, next) => {
     // this serves both the API and the client.
     // It is the only port that is not firewalled.
     const port = parseInt(process.env.PORT || '5000', 10);
+    console.log(`Attempting to start server on port ${port}...`);
     
-    await new Promise<void>((resolve, reject) => {
-      server.listen({
-        port,
-        host: "0.0.0.0",
-        reusePort: true,
-      }, (err?: Error) => {
-        if (err) {
-          reject(err);
-          return;
-        }
-        
-        log(`serving on port ${port}`);
-        resolve();
-        
-        // Initialize database seeding after server is ready
-        // Run in background to not block server startup
-        if (process.env.NODE_ENV !== 'test') {
-          // Use setImmediate to ensure this doesn't block the event loop
-          setImmediate(async () => {
-            try {
-              console.log("Starting background database initialization...");
-              const adminUser = await seedAdminUser();
-              if (adminUser) {
-                await migrateExistingData(adminUser.id);
-              }
-              console.log("Background database initialization completed");
-            } catch (error) {
-              console.error("Background database initialization failed:", error);
-              // Don't crash the server - log and continue
+    // Use simpler server.listen() without Promise wrapper
+    const serverInstance = server.listen(port, "0.0.0.0", () => {
+      console.log(`✅ Server successfully started on port ${port}`);
+      log(`serving on port ${port}`);
+      
+      // Initialize database seeding after server is ready
+      // Run in background to not block server startup
+      if (process.env.NODE_ENV !== 'test') {
+        // Use setImmediate to ensure this doesn't block the event loop
+        setImmediate(async () => {
+          try {
+            console.log("Starting background database initialization...");
+            const adminUser = await seedAdminUser();
+            if (adminUser) {
+              await migrateExistingData(adminUser.id);
             }
-          });
-        }
-      });
+            console.log("Background database initialization completed");
+          } catch (error) {
+            console.error("Background database initialization failed:", error);
+            // Don't crash the server - log and continue
+          }
+        });
+      }
+    });
+
+    serverInstance.on('error', (error) => {
+      console.error('Server error:', error);
+    });
+
+    serverInstance.on('listening', () => {
+      console.log('Server listening event fired');
+    });
+
+    // Keep the process alive - this ensures the async IIFE doesn't complete
+    console.log('Server setup complete, keeping process alive...');
+    
+    // Return a never-resolving promise to keep the async function alive
+    return new Promise(() => {
+      // This promise never resolves, keeping the async function running forever
+      console.log('Process will remain alive to serve requests...');
     });
     
   } catch (error) {
