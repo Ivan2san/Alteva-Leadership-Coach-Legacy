@@ -58,10 +58,124 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get conversations endpoint
   app.get("/api/conversations", async (req, res) => {
     try {
-      const conversations = await storage.getConversations();
+      const { status, topic, search } = req.query;
+      
+      let conversations;
+      if (search) {
+        conversations = await storage.searchConversations(search as string);
+      } else if (topic) {
+        conversations = await storage.getConversationsByTopic(topic as string);
+      } else {
+        conversations = await storage.getConversations(status as string);
+      }
+      
       res.json(conversations);
     } catch (error) {
       console.error("Get conversations error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Get specific conversation
+  app.get("/api/conversations/:id", async (req, res) => {
+    try {
+      const conversation = await storage.getConversation(req.params.id);
+      if (!conversation) {
+        return res.status(404).json({ error: "Conversation not found" });
+      }
+      res.json(conversation);
+    } catch (error) {
+      console.error("Get conversation error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Update conversation
+  app.patch("/api/conversations/:id", async (req, res) => {
+    try {
+      const updates = req.body;
+      const conversation = await storage.updateConversation(req.params.id, updates);
+      if (!conversation) {
+        return res.status(404).json({ error: "Conversation not found" });
+      }
+      res.json(conversation);
+    } catch (error) {
+      console.error("Update conversation error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Delete conversation
+  app.delete("/api/conversations/:id", async (req, res) => {
+    try {
+      const success = await storage.deleteConversation(req.params.id);
+      if (!success) {
+        return res.status(404).json({ error: "Conversation not found" });
+      }
+      res.status(204).send();
+    } catch (error) {
+      console.error("Delete conversation error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Star/unstar conversation
+  app.patch("/api/conversations/:id/star", async (req, res) => {
+    try {
+      const { isStarred } = req.body;
+      const conversation = await storage.starConversation(req.params.id, isStarred);
+      if (!conversation) {
+        return res.status(404).json({ error: "Conversation not found" });
+      }
+      res.json(conversation);
+    } catch (error) {
+      console.error("Star conversation error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Archive conversation
+  app.patch("/api/conversations/:id/archive", async (req, res) => {
+    try {
+      const conversation = await storage.archiveConversation(req.params.id);
+      if (!conversation) {
+        return res.status(404).json({ error: "Conversation not found" });
+      }
+      res.json(conversation);
+    } catch (error) {
+      console.error("Archive conversation error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Export conversation endpoint
+  app.get("/api/conversations/:id/export", async (req, res) => {
+    try {
+      const { format = 'json' } = req.query;
+      const conversation = await storage.getConversation(req.params.id);
+      
+      if (!conversation) {
+        return res.status(404).json({ error: "Conversation not found" });
+      }
+
+      const title = conversation.title || `Conversation ${conversation.topic}`;
+      const timestamp = new Date().toISOString().split('T')[0];
+      
+      if (format === 'txt') {
+        const messages = Array.isArray(conversation.messages) ? conversation.messages : [];
+        const textContent = `${title}\n${'='.repeat(title.length)}\n\nTopic: ${conversation.topic}\nDate: ${new Date(conversation.createdAt || '').toLocaleString()}\n\n` +
+          messages.map((msg: any) => `${msg.sender.toUpperCase()}: ${msg.text}`).join('\n\n');
+        
+        res.setHeader('Content-Type', 'text/plain');
+        res.setHeader('Content-Disposition', `attachment; filename="${title.replace(/[^a-zA-Z0-9]/g, '_')}_${timestamp}.txt"`);
+        res.send(textContent);
+      } else {
+        res.setHeader('Content-Type', 'application/json');
+        res.setHeader('Content-Disposition', `attachment; filename="${title.replace(/[^a-zA-Z0-9]/g, '_')}_${timestamp}.json"`);
+        res.json(conversation);
+      }
+    } catch (error) {
+      console.error("Export conversation error:", error);
       res.status(500).json({ error: "Internal server error" });
     }
   });

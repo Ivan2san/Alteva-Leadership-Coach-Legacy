@@ -11,8 +11,15 @@ export const users = pgTable("users", {
 
 export const conversations = pgTable("conversations", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  title: text("title"),
   topic: text("topic").notNull(),
+  summary: text("summary"),
   messages: jsonb("messages").notNull().default('[]'),
+  messageCount: integer("message_count").default(0),
+  userId: varchar("user_id"), // for future user authentication
+  isStarred: boolean("is_starred").default(false),
+  status: text("status").default('active'), // active, archived, deleted
+  lastMessageAt: timestamp("last_message_at"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -39,9 +46,11 @@ export const insertUserSchema = createInsertSchema(users).pick({
   password: true,
 });
 
-export const insertConversationSchema = createInsertSchema(conversations).pick({
-  topic: true,
-  messages: true,
+export const insertConversationSchema = createInsertSchema(conversations).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  lastMessageAt: true,
 });
 
 export const insertKnowledgeBaseFileSchema = createInsertSchema(knowledgeBaseFiles).omit({

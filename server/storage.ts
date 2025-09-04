@@ -10,7 +10,7 @@ import {
   knowledgeBaseFiles
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, ilike, or } from "drizzle-orm";
+import { eq, ilike, or, desc, and } from "drizzle-orm";
 
 export interface IStorage {
   // User operations
@@ -20,9 +20,14 @@ export interface IStorage {
   
   // Conversation operations
   createConversation(conversation: InsertConversation): Promise<Conversation>;
-  getConversations(): Promise<Conversation[]>;
+  getConversations(status?: string): Promise<Conversation[]>;
   getConversation(id: string): Promise<Conversation | undefined>;
   updateConversation(id: string, updates: Partial<Conversation>): Promise<Conversation | undefined>;
+  deleteConversation(id: string): Promise<boolean>;
+  searchConversations(query: string): Promise<Conversation[]>;
+  getConversationsByTopic(topic: string): Promise<Conversation[]>;
+  starConversation(id: string, isStarred: boolean): Promise<Conversation | undefined>;
+  archiveConversation(id: string): Promise<Conversation | undefined>;
   
   // Knowledge base file operations
   createKnowledgeBaseFile(file: InsertKnowledgeBaseFile): Promise<KnowledgeBaseFile>;
@@ -56,8 +61,12 @@ export class DatabaseStorage implements IStorage {
     return conversation;
   }
 
-  async getConversations(): Promise<Conversation[]> {
-    return await db.select().from(conversations).orderBy(conversations.updatedAt);
+  async getConversations(status?: string): Promise<Conversation[]> {
+    const query = db.select().from(conversations);
+    if (status) {
+      return await query.where(eq(conversations.status, status)).orderBy(desc(conversations.updatedAt));
+    }
+    return await query.where(eq(conversations.status, 'active')).orderBy(desc(conversations.updatedAt));
   }
 
   async getConversation(id: string): Promise<Conversation | undefined> {
@@ -69,6 +78,59 @@ export class DatabaseStorage implements IStorage {
     const [conversation] = await db
       .update(conversations)
       .set({ ...updates, updatedAt: new Date() })
+      .where(eq(conversations.id, id))
+      .returning();
+    return conversation;
+  }
+
+  async deleteConversation(id: string): Promise<boolean> {
+    const result = await db.delete(conversations).where(eq(conversations.id, id));
+    return (result.rowCount ?? 0) > 0;
+  }
+
+  async searchConversations(query: string): Promise<Conversation[]> {
+    return await db
+      .select()
+      .from(conversations)
+      .where(
+        and(
+          eq(conversations.status, 'active'),
+          or(
+            ilike(conversations.title, `%${query}%`),
+            ilike(conversations.summary, `%${query}%`),
+            ilike(conversations.topic, `%${query}%`)
+          )
+        )
+      )
+      .orderBy(desc(conversations.updatedAt));
+  }
+
+  async getConversationsByTopic(topic: string): Promise<Conversation[]> {
+    return await db
+      .select()
+      .from(conversations)
+      .where(
+        and(
+          eq(conversations.topic, topic),
+          eq(conversations.status, 'active')
+        )
+      )
+      .orderBy(desc(conversations.updatedAt));
+  }
+
+  async starConversation(id: string, isStarred: boolean): Promise<Conversation | undefined> {
+    const [conversation] = await db
+      .update(conversations)
+      .set({ isStarred, updatedAt: new Date() })
+      .where(eq(conversations.id, id))
+      .returning();
+    return conversation;
+  }
+
+  async archiveConversation(id: string): Promise<Conversation | undefined> {
+    const [conversation] = await db
+      .update(conversations)
+      .set({ status: 'archived', updatedAt: new Date() })
       .where(eq(conversations.id, id))
       .returning();
     return conversation;

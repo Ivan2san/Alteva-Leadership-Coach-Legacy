@@ -7,6 +7,7 @@ import Home from "@/pages/home";
 import PromptSelection from "@/pages/prompt-selection";
 import Chat from "@/pages/chat";
 import KnowledgeBase from "@/pages/knowledge-base";
+import Conversations from "@/pages/conversations";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -16,6 +17,7 @@ function Router() {
       <Route path="/prompts/:topic" component={PromptSelection} />
       <Route path="/chat/:topic" component={Chat} />
       <Route path="/knowledge-base" component={KnowledgeBase} />
+      <Route path="/conversations" component={Conversations} />
       <Route component={NotFound} />
     </Switch>
   );

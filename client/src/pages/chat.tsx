@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
-import { ArrowLeft, Plus, Send } from "lucide-react";
+import { ArrowLeft, Plus, Send, Save } from "lucide-react";
 import Header from "@/components/header";
 import ChatMessage from "@/components/chat-message";
 import TypingIndicator from "@/components/typing-indicator";
@@ -22,7 +22,11 @@ export default function Chat({ params }: ChatProps) {
   const topic = params.topic;
   const config = topicConfigurations[topic];
 
-  const { messages, isTyping, sendMessage, clearMessages } = useChat();
+  // Get resumeId from URL params if present
+  const urlParams = new URLSearchParams(window.location.search);
+  const resumeId = urlParams.get('resumeId');
+
+  const { messages, isTyping, sendMessage, clearMessages, saveConversation, isConnected } = useChat(resumeId || undefined);
 
   // Get initial prompt from session storage
   useEffect(() => {
@@ -97,17 +101,42 @@ export default function Chat({ params }: ChatProps) {
           </Button>
           <div className="flex-1">
             <h2 className="text-lg font-semibold text-foreground">AI Coach</h2>
-            <p className="text-sm text-muted-foreground">{config.title}</p>
+            <div className="flex items-center gap-2">
+              <p className="text-sm text-muted-foreground">{config.title}</p>
+              {isConnected && (
+                <span className="text-xs bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400 px-2 py-1 rounded">
+                  Saved
+                </span>
+              )}
+              {resumeId && (
+                <span className="text-xs bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400 px-2 py-1 rounded">
+                  Resumed
+                </span>
+              )}
+            </div>
           </div>
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={handleNewConversation}
-            title="Start New Conversation"
-            data-testid="button-new-conversation"
-          >
-            <Plus className="text-muted-foreground" size={16} />
-          </Button>
+          <div className="flex items-center space-x-1">
+            {messages.length > 0 && !isConnected && (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => saveConversation()}
+                title="Save Conversation"
+                data-testid="button-save-conversation"
+              >
+                <Save className="text-muted-foreground" size={16} />
+              </Button>
+            )}
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={handleNewConversation}
+              title="Start New Conversation"
+              data-testid="button-new-conversation"
+            >
+              <Plus className="text-muted-foreground" size={16} />
+            </Button>
+          </div>
         </div>
 
         {/* Chat Messages Container */}
