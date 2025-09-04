@@ -312,46 +312,24 @@ ${userLGP360Data ? this.generatePersonalizationContext(userLGP360Data) : ''}`;
   }
 
   private generatePersonalizationContext(lgp360Data: LGP360ReportData): string {
+    if (!lgp360Data.summary) {
+      return '';
+    }
+    
     return `
 ## 👤 USER PERSONALIZATION CONTEXT
 
-**Leadership Profile:**
-- **Role:** ${lgp360Data.currentRole} at ${lgp360Data.organization}
-- **Experience:** ${lgp360Data.yearsInLeadership} years in leadership, managing ${lgp360Data.teamSize} team members
-- **Industry:** ${lgp360Data.industryExperience}
-
-**Primary Challenges:** ${lgp360Data.primaryChallenges.join(', ')}
-
-**Development Goals:** ${lgp360Data.leadershipGoals.join(', ')}
-
-**Leadership Style:**
-- **Communication:** ${lgp360Data.communicationStyle}
-- **Decision Making:** ${lgp360Data.decisionMakingApproach}
-- **Conflict Resolution:** ${lgp360Data.conflictResolutionStyle}
-
-**Motivation Factors:** ${lgp360Data.motivationFactors.join(', ')}
-
-**Learning Preferences:** ${lgp360Data.learningPreferences.join(', ')}
-
-**Strengths:** ${lgp360Data.strengths.join(', ')}
-
-**Growth Areas:** ${lgp360Data.growthAreas.join(', ')}
-
-**Coaching Experience:** ${lgp360Data.previousCoaching}
-
-**Expectations:** ${lgp360Data.expectations}
-
-${lgp360Data.additionalNotes ? `**Additional Notes:** ${lgp360Data.additionalNotes}` : ''}
+**Leadership Profile Summary:**
+${lgp360Data.summary}
 
 **🎯 PERSONALIZATION INSTRUCTIONS:**
-Use this profile information to:
-1. **Tailor coaching questions** to their specific challenges and goals
-2. **Reference their communication/decision-making style** when suggesting approaches
-3. **Build on their identified strengths** while addressing growth areas
-4. **Match their learning preferences** in how you present insights
-5. **Connect to their industry context** and role-specific challenges
-6. **Acknowledge their experience level** and team size in your coaching
-7. **Reference their motivations** to increase engagement and relevance
+Use this leadership profile summary to:
+1. **Tailor coaching questions** to their specific challenges and goals mentioned in the profile
+2. **Reference their leadership style and approaches** identified in the summary
+3. **Build on their strengths** while addressing development areas noted in the profile
+4. **Connect to their role, industry, and experience level** as described
+5. **Acknowledge their specific situation** and team dynamics mentioned
+6. **Reference their motivations and preferences** outlined in the summary
 
 Make coaching personal and relevant to their unique leadership context while maintaining Alteva coaching methodology.
 `;
@@ -393,8 +371,8 @@ Make coaching personal and relevant to their unique leadership context while mai
     );
   }
 
-  /** Analyzes uploaded document and extracts LGP360 data */
-  async analyzeDocument(fileBuffer: Buffer, fileName: string, mimeType: string): Promise<LGP360ReportData> {
+  /** Analyzes uploaded document and creates a professional summary */
+  async analyzeDocument(fileBuffer: Buffer, fileName: string, mimeType: string): Promise<string> {
     try {
       // Convert buffer to text based on file type
       let documentText = '';
@@ -481,36 +459,31 @@ Coaching Background: Some coaching experience
 Preferred Learning: Mentoring, workshops, 360 feedback`;
       }
 
-      const analysisPrompt = `You are an expert in analyzing leadership assessment reports and 360-degree feedback documents. 
+      const analysisPrompt = `You are an expert executive coach and leadership assessment specialist. 
 
-Analyze the following document and extract information to populate an LGP360 (Leadership Growth Profile 360) report form.
+Analyze the following leadership document and create a comprehensive, professional executive summary report that captures the key insights and recommendations.
 
 Document content:
 ${documentText}
 
-Please extract and structure the information into the following JSON format. If information is not found in the document, use reasonable defaults or make educated inferences based on context:
+Create a well-structured professional report in markdown format that includes:
 
-{
-  "currentRole": "string - current leadership position",
-  "organization": "string - company/organization name",
-  "yearsInLeadership": "number - years of leadership experience",
-  "teamSize": "number - current team size",
-  "industryExperience": "string - industry/sector",
-  "primaryChallenges": ["array of strings - main leadership challenges"],
-  "leadershipGoals": ["array of strings - development goals"],
-  "communicationStyle": "string - one of: Direct & Assertive, Collaborative & Inclusive, Supportive & Encouraging, Analytical & Data-Driven, Inspirational & Visionary",
-  "decisionMakingApproach": "string - one of: Quick & Decisive, Consultative & Inclusive, Analytical & Thorough, Consensus Building, Delegative & Empowering",
-  "conflictResolutionStyle": "string - one of: Mediating & Facilitating, Direct Confrontation, Collaborative Problem Solving, Avoidance & De-escalation, Compromise Focused",
-  "motivationFactors": ["array of strings - what motivates them"],
-  "learningPreferences": ["array of strings - preferred learning methods"],
-  "strengths": ["array of strings - leadership strengths"],
-  "growthAreas": ["array of strings - areas for development"],
-  "previousCoaching": "string - one of: Never worked with a coach, Limited coaching experience, Some coaching experience, Extensive coaching experience, Currently working with a coach",
-  "expectations": "string - expectations from coaching",
-  "additionalNotes": "string - any additional relevant information"
-}
+1. **Executive Summary** - Brief overview of the leader's profile
+2. **Leadership Profile** - Current role, experience, and context
+3. **Core Strengths** - Key leadership capabilities and achievements
+4. **Development Opportunities** - Areas for growth and improvement
+5. **Leadership Style Assessment** - Communication, decision-making, and conflict resolution approaches
+6. **Coaching Recommendations** - Specific development priorities and suggested focus areas
 
-Return ONLY the JSON object, no other text.`;
+Format the response as a professional executive report using clear headings, bullet points, and structured content. Make it suitable for executive review and coaching program development.
+
+Ensure the report is:
+- Professional and executive-level appropriate
+- Comprehensive yet concise
+- Action-oriented with specific insights
+- Well-formatted with clear sections
+
+Return the complete professional report in markdown format.`;
 
       console.log("Document analysis request:", {
         fileType: mimeType,
@@ -519,13 +492,12 @@ Return ONLY the JSON object, no other text.`;
       });
 
       const response = await openai.chat.completions.create({
-        model: "gpt-4o", // Using gpt-4o instead as it supports JSON mode and is widely available
+        model: "gpt-4o", // Using gpt-4o for comprehensive document analysis
         messages: [
-          { role: "system", content: "You are an expert at analyzing leadership documents and extracting structured data. Always respond with valid JSON only." },
+          { role: "system", content: "You are an expert executive coach and leadership assessment specialist. Create professional, executive-level reports that provide valuable insights for leadership development." },
           { role: "user", content: analysisPrompt }
         ],
-        response_format: { type: "json_object" },
-        max_completion_tokens: 1500,
+        max_completion_tokens: 2000,
       });
 
       console.log("OpenAI response:", {
@@ -544,11 +516,8 @@ Return ONLY the JSON object, no other text.`;
         throw new Error("Empty response from AI analysis");
       }
 
-      // Parse the JSON response
-      const parsedData = JSON.parse(aiResponse);
-      
-      // Validate the structure matches LGP360ReportData schema
-      return parsedData as LGP360ReportData;
+      // Return the professional summary directly
+      return aiResponse;
       
     } catch (error) {
       console.error("Error analyzing document:", error);

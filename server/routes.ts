@@ -507,13 +507,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // LGP360 Report endpoints
   app.post("/api/lgp360", authenticateUser, async (req, res) => {
     try {
-      // Validate LGP360 data
+      // Validate LGP360 data (now just a summary)
       const validationResult = lgp360ReportSchema.safeParse(req.body);
       if (!validationResult.success) {
         return res.status(400).json({ error: "Invalid LGP360 data", details: validationResult.error.errors });
       }
 
-      // Save LGP360 data to user profile (user is available from middleware)
+      // Save LGP360 summary to user profile (user is available from middleware)
       const updatedUser = await storage.updateUserLGP360(req.user!.id, validationResult.data);
       if (!updatedUser) {
         return res.status(404).json({ error: "User not found" });
@@ -534,9 +534,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Process document with AI (user is available from middleware)
-      const analyzedData = await openaiService.analyzeDocument(req.file.buffer, req.file.originalname, req.file.mimetype);
+      const summary = await openaiService.analyzeDocument(req.file.buffer, req.file.originalname, req.file.mimetype);
       
-      res.json(analyzedData);
+      res.json({ summary });
     } catch (error) {
       console.error("Document analysis error:", error);
       res.status(500).json({ error: "Failed to analyze document" });

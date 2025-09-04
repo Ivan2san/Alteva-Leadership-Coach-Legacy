@@ -84,25 +84,9 @@ export const loginSchema = z.object({
   password: z.string().min(1, "Password is required"),
 });
 
-// LGP360 Report Schema
+// LGP360 Report Schema (simplified to summary-based approach)
 export const lgp360ReportSchema = z.object({
-  currentRole: z.string().min(1, "Current role is required"),
-  organization: z.string().min(1, "Organization is required"),
-  yearsInLeadership: z.number().min(0, "Years in leadership must be positive"),
-  teamSize: z.number().min(0, "Team size must be positive"),
-  industryExperience: z.string().min(1, "Industry experience is required"),
-  primaryChallenges: z.array(z.string()).min(1, "At least one challenge must be selected"),
-  leadershipGoals: z.array(z.string()).min(1, "At least one goal must be selected"),
-  communicationStyle: z.string().min(1, "Communication style is required"),
-  decisionMakingApproach: z.string().min(1, "Decision making approach is required"),
-  conflictResolutionStyle: z.string().min(1, "Conflict resolution style is required"),
-  motivationFactors: z.array(z.string()).min(1, "At least one motivation factor must be selected"),
-  learningPreferences: z.array(z.string()).min(1, "At least one learning preference must be selected"),
-  strengths: z.array(z.string()).min(1, "At least one strength must be listed"),
-  growthAreas: z.array(z.string()).min(1, "At least one growth area must be listed"),
-  previousCoaching: z.string().min(1, "Previous coaching experience is required"),
-  expectations: z.string().min(1, "Expectations are required"),
-  additionalNotes: z.string().optional(),
+  summary: z.string().min(1, "Leadership profile summary is required"),
 });
 
 export const insertConversationSchema = createInsertSchema(conversations).omit({
