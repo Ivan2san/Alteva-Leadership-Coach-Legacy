@@ -45,7 +45,7 @@ export default function LGP360ReportPage() {
 
   const saveMutation = useMutation({
     mutationFn: async (data: LGP360ReportData) => {
-      await apiRequest("/api/lgp360", "POST", data);
+      await apiRequest("POST", "/api/lgp360", data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
@@ -107,6 +107,11 @@ export default function LGP360ReportPage() {
     const file = event.target.files?.[0];
     if (!file) return;
 
+    // Prevent duplicate processing if already in progress
+    if (isProcessingUpload || processDocumentMutation.isPending) {
+      return;
+    }
+
     // Check file type
     const allowedTypes = ['application/pdf', 'text/plain', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
     if (!allowedTypes.includes(file.type)) {
@@ -130,6 +135,9 @@ export default function LGP360ReportPage() {
 
     setIsProcessingUpload(true);
     processDocumentMutation.mutate(file);
+    
+    // Clear the input to allow re-uploading the same file
+    event.target.value = '';
   };
 
   const onSubmit = (data: LGP360ReportData) => {
@@ -203,7 +211,7 @@ export default function LGP360ReportPage() {
               <div className="space-y-4">
                 <div 
                   className="border-2 border-dashed border-blue-300 dark:border-blue-600 rounded-lg p-8 text-center cursor-pointer hover:border-blue-400 transition-colors"
-                  onClick={() => fileInputRef.current?.click()}
+                  onClick={() => !isProcessingUpload && !processDocumentMutation.isPending && fileInputRef.current?.click()}
                 >
                   {isProcessingUpload ? (
                     <div className="flex flex-col items-center gap-4">
