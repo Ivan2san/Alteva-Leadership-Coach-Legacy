@@ -459,31 +459,32 @@ Coaching Background: Some coaching experience
 Preferred Learning: Mentoring, workshops, 360 feedback`;
       }
 
-      const analysisPrompt = `You are an expert executive coach and leadership assessment specialist. 
+      const analysisPrompt = `You are an expert executive coach and leadership assessment specialist working with a senior leader. 
 
-Analyze the following leadership document and create a comprehensive, professional executive summary report that captures the key insights and recommendations.
+Analyze the following leadership document and create a comprehensive, professional executive summary that reads like a personalized coaching assessment. Write it as a narrative report that could be delivered directly to the leader during a coaching session.
 
 Document content:
 ${documentText}
 
-Create a well-structured professional report in markdown format that includes:
+Create a professional, conversational summary that flows naturally and includes these key areas:
 
-1. **Executive Summary** - Brief overview of the leader's profile
-2. **Leadership Profile** - Current role, experience, and context
-3. **Core Strengths** - Key leadership capabilities and achievements
-4. **Development Opportunities** - Areas for growth and improvement
-5. **Leadership Style Assessment** - Communication, decision-making, and conflict resolution approaches
-6. **Coaching Recommendations** - Specific development priorities and suggested focus areas
+- A warm, professional opening that acknowledges their leadership journey
+- Overview of their current role, experience, and organizational context
+- Recognition of their core leadership strengths and what they do well
+- Identification of growth opportunities and development areas
+- Insights into their leadership style, communication approach, and decision-making patterns
+- Understanding of their current challenges and what they're navigating
+- Their aspirations, goals, and what success looks like for them
+- Coaching observations and recommendations for their development journey
 
-Format the response as a professional executive report using clear headings, bullet points, and structured content. Make it suitable for executive review and coaching program development.
+Write this as a cohesive, professional narrative - similar to what an executive coach would share after reviewing their assessment. Make it:
+- Warm, professional, and encouraging in tone
+- Specific and personalized to their situation
+- Insightful with actionable observations
+- Flowing naturally from one section to the next
+- Executive-level appropriate but conversational
 
-Ensure the report is:
-- Professional and executive-level appropriate
-- Comprehensive yet concise
-- Action-oriented with specific insights
-- Well-formatted with clear sections
-
-Return the complete professional report in markdown format.`;
+Return the complete assessment as a flowing professional narrative, not as a structured document with headers or bullet points.`;
 
       console.log("Document analysis request:", {
         fileType: mimeType,
