@@ -25,6 +25,8 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { topicConfigurations } from "@/lib/topic-configurations";
 import { Link } from "wouter";
+import { Breadcrumb } from "@/components/breadcrumb";
+import { BackButton } from "@/components/back-button";
 import type { Conversation } from "@shared/schema";
 
 export default function ConversationsPage() {
@@ -127,6 +129,9 @@ export default function ConversationsPage() {
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-6xl">
+      <BackButton />
+      <Breadcrumb items={[{ label: "Conversations", current: true }]} />
+      
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">Conversation History</h1>
         <p className="text-gray-600 dark:text-gray-400">

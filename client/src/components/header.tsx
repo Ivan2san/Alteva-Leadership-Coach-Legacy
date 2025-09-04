@@ -19,50 +19,65 @@ export default function Header({ onMenuClick }: HeaderProps) {
               <h1 className="text-lg font-semibold text-foreground hover:text-primary cursor-pointer">Leadership Coach</h1>
             </Link>
           </div>
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-1">
+            <Link href="/">
+              <Button 
+                variant="ghost" 
+                className="flex flex-col items-center px-2 py-1 h-auto"
+                data-testid="home-link"
+              >
+                <Users className="text-muted-foreground" size={16} />
+                <span className="text-xs mt-0.5">Home</span>
+              </Button>
+            </Link>
             <Link href="/prompt-library">
               <Button 
                 variant="ghost" 
-                size="sm"
+                className="flex flex-col items-center px-2 py-1 h-auto"
                 data-testid="prompt-library-link"
               >
                 <FileText className="text-muted-foreground" size={16} />
+                <span className="text-xs mt-0.5">Prompts</span>
               </Button>
             </Link>
             <Link href="/analytics">
               <Button 
                 variant="ghost" 
-                size="sm"
+                className="flex flex-col items-center px-2 py-1 h-auto"
                 data-testid="analytics-link"
               >
                 <BarChart3 className="text-muted-foreground" size={16} />
+                <span className="text-xs mt-0.5">Analytics</span>
               </Button>
             </Link>
             <Link href="/conversations">
               <Button 
                 variant="ghost" 
-                size="sm"
+                className="flex flex-col items-center px-2 py-1 h-auto"
                 data-testid="conversations-link"
               >
                 <MessageSquare className="text-muted-foreground" size={16} />
+                <span className="text-xs mt-0.5">Chats</span>
               </Button>
             </Link>
             <Link href="/knowledge-base">
               <Button 
                 variant="ghost" 
-                size="sm"
+                className="flex flex-col items-center px-2 py-1 h-auto"
                 data-testid="knowledge-base-link"
               >
                 <Database className="text-muted-foreground" size={16} />
+                <span className="text-xs mt-0.5">Knowledge</span>
               </Button>
             </Link>
             <Button 
               variant="ghost" 
-              size="sm" 
+              className="flex flex-col items-center px-2 py-1 h-auto"
               onClick={onMenuClick}
               data-testid="button-menu"
             >
               <Menu className="text-muted-foreground" size={16} />
+              <span className="text-xs mt-0.5">Menu</span>
             </Button>
           </div>
         </div>

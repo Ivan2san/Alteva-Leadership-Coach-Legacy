@@ -6,6 +6,7 @@ import ChatMessage from "@/components/chat-message";
 import TypingIndicator from "@/components/typing-indicator";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Breadcrumb } from "@/components/breadcrumb";
 import { topicConfigurations } from "@/lib/topic-configurations";
 import { useChat } from "@/hooks/use-chat";
 
@@ -90,6 +91,10 @@ export default function Chat({ params }: ChatProps) {
       <Header />
       
       <main className="max-w-md mx-auto px-4 py-6">
+        <Breadcrumb items={[
+          { label: config.title, href: `/prompts/${topic}` },
+          { label: "Chat", current: true }
+        ]} />
         <div className="flex items-center space-x-3 mb-6">
           <Button 
             variant="ghost" 

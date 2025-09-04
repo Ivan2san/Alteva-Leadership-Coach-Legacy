@@ -17,6 +17,8 @@ import {
   HardDrive
 } from "lucide-react";
 import { KnowledgeBaseUploader } from "@/components/KnowledgeBaseUploader";
+import { Breadcrumb } from "@/components/breadcrumb";
+import { BackButton } from "@/components/back-button";
 import type { KnowledgeBaseFile } from "@shared/schema";
 
 export default function KnowledgeBasePage() {
@@ -55,6 +57,9 @@ export default function KnowledgeBasePage() {
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-6xl">
+      <BackButton />
+      <Breadcrumb items={[{ label: "Knowledge Base", current: true }]} />
+      
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">Knowledge Base</h1>
         <p className="text-gray-600 dark:text-gray-400">

@@ -5,6 +5,7 @@ import Header from "@/components/header";
 import PromptCard from "@/components/prompt-card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Breadcrumb } from "@/components/breadcrumb";
 import { topicConfigurations } from "@/lib/topic-configurations";
 import { useToast } from "@/hooks/use-toast";
 
@@ -63,6 +64,10 @@ export default function PromptSelection({ params }: PromptSelectionProps) {
       <Header />
       
       <main className="max-w-md mx-auto px-4 py-6">
+        <Breadcrumb items={[
+          { label: config.title, current: true }
+        ]} />
+        
         <div className="space-y-6">
           <div className="flex items-center space-x-3 mb-6">
             <Button 

@@ -12,6 +12,8 @@ import {
   Clock
 } from "lucide-react";
 import { topicConfigurations } from "@/lib/topic-configurations";
+import { Breadcrumb } from "@/components/breadcrumb";
+import { BackButton } from "@/components/back-button";
 
 interface ConversationStats {
   total: number;
@@ -59,6 +61,9 @@ export default function AnalyticsPage() {
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-6xl">
+      <BackButton />
+      <Breadcrumb items={[{ label: "Analytics", current: true }]} />
+      
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">Leadership Analytics</h1>
         <p className="text-gray-600 dark:text-gray-400">

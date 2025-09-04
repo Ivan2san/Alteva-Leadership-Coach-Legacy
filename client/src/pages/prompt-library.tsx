@@ -24,6 +24,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
+import { Breadcrumb } from "@/components/breadcrumb";
+import { BackButton } from "@/components/back-button";
 import type { PromptTemplate } from "@shared/schema";
 
 const promptTemplateSchema = z.object({
@@ -193,6 +195,9 @@ export default function PromptLibraryPage() {
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-6xl">
+      <BackButton />
+      <Breadcrumb items={[{ label: "Prompt Library", current: true }]} />
+      
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">Prompt Library</h1>
         <p className="text-gray-600 dark:text-gray-400">
