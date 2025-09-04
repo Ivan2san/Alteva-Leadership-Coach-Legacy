@@ -53,7 +53,25 @@ app.use((req, res, next) => {
 });
 
 (async () => {
-  // Register routes first for health checks
+  // Add immediate health check endpoints before all other setup
+  app.get("/health", (req, res) => {
+    res.status(200).json({ 
+      status: "healthy", 
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime()
+    });
+  });
+
+  app.get("/", (req, res) => {
+    res.status(200).json({ 
+      status: "Leadership Coach API", 
+      health: "ok",
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime()
+    });
+  });
+
+  // Register routes after health checks
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {

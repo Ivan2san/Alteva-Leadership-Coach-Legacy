@@ -19,20 +19,6 @@ import multer from "multer";
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Health check endpoints for deployment
-  app.get("/health", (req, res) => {
-    res.status(200).json({ status: "healthy", timestamp: new Date().toISOString() });
-  });
-
-  // Root health check
-  app.get("/", (req, res) => {
-    res.status(200).json({ 
-      status: "Leadership Coach API", 
-      health: "ok",
-      timestamp: new Date().toISOString() 
-    });
-  });
-
   // Middleware
   app.use(cookieParser());
   
