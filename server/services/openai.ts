@@ -63,9 +63,12 @@ Key principles:
         // Vector store integration will be added in future update
       });
 
-      const aiMessage = response.choices[0]?.message?.content;
+      console.log("OpenAI API Response:", JSON.stringify(response, null, 2));
+      
+      const aiMessage = response.choices?.[0]?.message?.content;
       
       if (!aiMessage) {
+        console.error("No content in response:", response);
         throw new Error("No response from AI");
       }
 
