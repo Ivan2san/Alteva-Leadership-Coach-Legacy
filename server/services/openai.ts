@@ -288,8 +288,12 @@ ${userLGP360Data ? this.generatePersonalizationContext(userLGP360Data) : ''}`;
         { role: "user", content: userPrompt },
       ];
 
+      // Calculate total prompt length for debugging
+      const totalPromptLength = messages.reduce((total, msg) => total + (msg.content?.length || 0), 0);
+      console.log(`Chat prompt length: ${totalPromptLength} characters`);
+
       const response = await openai.chat.completions.create({
-        model: "gpt-5", // the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
+        model: "gpt-4o", // Using gpt-4o for consistency with document analysis
         messages,
         max_completion_tokens: 1000,
       });
@@ -297,7 +301,12 @@ ${userLGP360Data ? this.generatePersonalizationContext(userLGP360Data) : ''}`;
       const aiMessage = response.choices?.[0]?.message?.content?.trim();
       
       if (!aiMessage) {
-        throw new Error("Empty completion from model");
+        console.error("Empty response from OpenAI. Response details:", {
+          choices: response.choices?.length || 0,
+          finishReason: response.choices?.[0]?.finish_reason,
+          totalPromptLength
+        });
+        throw new Error(`Empty completion from model. Prompt length: ${totalPromptLength}`);
       }
 
       return { message: aiMessage };
@@ -316,25 +325,62 @@ ${userLGP360Data ? this.generatePersonalizationContext(userLGP360Data) : ''}`;
       return '';
     }
     
+    // Extract key insights from assessment to avoid token overflow
+    const assessmentSummary = this.extractKeyInsights(lgp360Data.assessment);
+    
     return `
 ## 👤 USER PERSONALIZATION CONTEXT
 
-**Professional Coaching Assessment:**
-${lgp360Data.assessment}
-
-${lgp360Data.originalContent ? `\n**Original Document Context:**\n${lgp360Data.originalContent.substring(0, 500)}...` : ''}
+**Leadership Profile Summary:**
+${assessmentSummary}
 
 **🎯 PERSONALIZATION INSTRUCTIONS:**
-Use this professional coaching assessment to:
-1. **Tailor coaching questions** to their specific challenges and goals identified in the assessment
-2. **Reference their leadership style and approaches** analyzed in the professional assessment
-3. **Build on their strengths** while addressing development areas noted in the coaching analysis
-4. **Connect to their role, industry, and experience level** as described in the assessment
-5. **Acknowledge their specific situation** and team dynamics mentioned
-6. **Reference their motivations and preferences** outlined in the professional assessment
+Use this leadership profile to:
+1. **Tailor coaching questions** to their specific challenges and goals
+2. **Reference their leadership style and approaches** 
+3. **Build on their strengths** while addressing development areas
+4. **Connect to their role and experience level**
+5. **Acknowledge their specific situation** and team dynamics
 
-Make coaching personal and relevant to their unique leadership context while maintaining Alteva coaching methodology.
+Make coaching personal and relevant to their unique leadership context while maintaining Alteva methodology.
 `;
+  }
+
+  private extractKeyInsights(assessment: string): string {
+    // Limit assessment to key sections, max 1000 characters
+    const maxLength = 1000;
+    
+    if (assessment.length <= maxLength) {
+      return assessment;
+    }
+
+    // Try to extract key sections like Executive Overview, Leadership Analysis, etc.
+    const sections = assessment.split(/\*\*(.*?)\*\*/);
+    let summary = '';
+    
+    for (let i = 0; i < sections.length && summary.length < maxLength; i++) {
+      const section = sections[i];
+      if (section && (
+        section.includes('EXECUTIVE OVERVIEW') ||
+        section.includes('LEADERSHIP ANALYSIS') ||
+        section.includes('DEVELOPMENT FOCUS') ||
+        section.includes('strengths') ||
+        section.includes('challenges') ||
+        section.includes('growth')
+      )) {
+        const nextContent = sections[i + 1];
+        if (nextContent && summary.length + nextContent.length < maxLength) {
+          summary += `**${section}**\n${nextContent.substring(0, 200)}...\n\n`;
+        }
+      }
+    }
+    
+    // Fallback: take first part of assessment
+    if (!summary) {
+      summary = assessment.substring(0, maxLength) + '...';
+    }
+    
+    return summary;
   }
 
   async getTopicSpecificResponse(
