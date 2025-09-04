@@ -544,7 +544,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const token = authHeader.substring(7);
       const jwt = await import('jsonwebtoken');
-      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback-secret') as { userId: string };
+      const decoded = jwt.default.verify(token, process.env.JWT_SECRET || 'fallback-secret') as { userId: string };
 
       if (!req.file) {
         return res.status(400).json({ error: "No document uploaded" });
