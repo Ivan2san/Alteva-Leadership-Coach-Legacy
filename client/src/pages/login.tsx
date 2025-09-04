@@ -33,6 +33,7 @@ export default function LoginPage() {
         headers: {
           "Content-Type": "application/json",
         },
+        credentials: "include", // Critical: Allow cookies to be saved
         body: JSON.stringify(data),
       });
 

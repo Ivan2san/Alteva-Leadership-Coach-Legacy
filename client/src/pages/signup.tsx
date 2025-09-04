@@ -37,6 +37,7 @@ export default function SignupPage() {
         headers: {
           "Content-Type": "application/json",
         },
+        credentials: "include", // Critical: Allow cookies to be saved
         body: JSON.stringify(data),
       });
 

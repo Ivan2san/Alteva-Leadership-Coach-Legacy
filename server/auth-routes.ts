@@ -38,22 +38,13 @@ export function registerAuthRoutes(app: Express) {
       // Set cookie with development-friendly settings
       console.log("Setting cookie for signup:", { userId: user.id, token: token.slice(0, 20) + "..." });
       
-      // Try multiple cookie approaches for development
+      // Set authentication cookie with proper development settings
       res.cookie('authToken', token, {
-        httpOnly: false, // Allow JS access for debugging
-        secure: false,
-        sameSite: 'none',
+        httpOnly: true, // Secure HTTP-only cookie
+        secure: false, // Allow HTTP in development
+        sameSite: 'lax', // Compatible with secure: false
         path: '/',
-        domain: undefined, // Don't specify domain for localhost
-        maxAge: 24 * 60 * 60 * 1000
-      });
-      
-      // Also set a backup non-httpOnly cookie for testing
-      res.cookie('authToken_backup', token, {
-        httpOnly: false,
-        secure: false,
-        sameSite: 'lax',
-        path: '/'
+        maxAge: 24 * 60 * 60 * 1000 // 24 hours
       });
 
       // Return user without password
@@ -90,22 +81,13 @@ export function registerAuthRoutes(app: Express) {
       // Set cookie with development-friendly settings
       console.log("Setting cookie for login:", { userId: user.id, token: token.slice(0, 20) + "..." });
       
-      // Try multiple cookie approaches for development
+      // Set authentication cookie with proper development settings
       res.cookie('authToken', token, {
-        httpOnly: false, // Allow JS access for debugging
-        secure: false,
-        sameSite: 'none',
+        httpOnly: true, // Secure HTTP-only cookie
+        secure: false, // Allow HTTP in development
+        sameSite: 'lax', // Compatible with secure: false
         path: '/',
-        domain: undefined, // Don't specify domain for localhost
-        maxAge: 24 * 60 * 60 * 1000
-      });
-      
-      // Also set a backup non-httpOnly cookie for testing
-      res.cookie('authToken_backup', token, {
-        httpOnly: false,
-        secure: false,
-        sameSite: 'lax',
-        path: '/'
+        maxAge: 24 * 60 * 60 * 1000 // 24 hours
       });
 
       // Return user without password
@@ -126,13 +108,9 @@ export function registerAuthRoutes(app: Express) {
   // Get current user endpoint
   app.get("/api/auth/me", async (req, res) => {
     try {
-      console.log("Auth check - all cookies:", req.cookies);
-      console.log("Auth check - headers:", req.headers.cookie);
-      const token = req.cookies?.authToken || req.cookies?.authToken_backup;
-      console.log("Auth check - token found:", !!token);
-      if (token) {
-        console.log("Auth check - token preview:", token.slice(0, 20) + "...");
-      }
+      console.log("Auth check - cookies received:", req.cookies);
+      const token = req.cookies?.authToken;
+      console.log("Auth check - authToken found:", !!token);
       
       if (!token) {
         return res.status(401).json({ error: "Not authenticated" });
