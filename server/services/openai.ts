@@ -1,29 +1,46 @@
+// openai.ts
 import OpenAI from "openai";
+import type { ChatCompletionMessageParam } from "openai/resources/chat/completions";
 
-// the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
-const openai = new OpenAI({ 
-  apiKey: process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY_ENV_VAR || "default_key"
-});
+const apiKey =
+  process.env.OPENAI_API_KEY ??
+  process.env.OPENAI_API_KEY_ENV_VAR;
+
+if (!apiKey) {
+  throw new Error("OPENAI_API_KEY is not set. Add it to your env.");
+}
+
+const openai = new OpenAI({ apiKey });
 
 export interface ChatResponse {
   message: string;
   error?: string;
 }
 
+type HistoryItem = { sender: "user" | "assistant"; text: string };
+
 export class OpenAIService {
-  private vectorStoreId: string;
+  // Keep, but don’t pretend it exists if not set
+  private vectorStoreId?: string;
 
   constructor() {
-    this.vectorStoreId = process.env.OPENAI_VECTOR_STORE_ID || "";
+    this.vectorStoreId = process.env.OPENAI_VECTOR_STORE_ID || undefined;
     if (!this.vectorStoreId) {
-      console.warn("OPENAI_VECTOR_STORE_ID not set. Knowledge base search will not be available.");
+      // Don’t spam logs in prod
+      if (process.env.NODE_ENV !== "production") {
+        console.warn(
+          "OPENAI_VECTOR_STORE_ID not set. Knowledge base search will be disabled."
+        );
+      }
     }
   }
 
-  async createVectorStore(name: string = "leadership_knowledge_base") {
+  /** Creates a vector store (Assistants v2). */
+  async createVectorStore(name = "leadership_knowledge_base") {
     try {
-      const vectorStore = await openai.vectorStores.create({
-        name: name
+      // SDK path is beta.vectorStores
+      const vectorStore = await (openai as any).beta.vectorStores.create({
+        name,
       });
       return vectorStore;
     } catch (error) {
@@ -32,75 +49,103 @@ export class OpenAIService {
     }
   }
 
-  async getLeadershipResponse(userPrompt: string, topic: string, conversationHistory: any[] = []): Promise<ChatResponse> {
+  async getLeadershipResponse(
+    userPrompt: string,
+    topic: string,
+    conversationHistory: HistoryItem[] = []
+  ): Promise<ChatResponse> {
     try {
-      const systemPrompt = `You are a leadership development coach with extensive expertise in helping professionals grow their leadership capabilities. 
+      const systemPrompt = `You are a leadership development coach with extensive expertise...
 
-You have access to a comprehensive knowledge base containing leadership development frameworks, assessment tools, and proven methodologies. Use this knowledge base to provide comprehensive, actionable advice.
+Use evidence-based practices, provide actionable next steps, and reference frameworks. 
+Topic: ${topic}`;
 
-Always maintain a supportive, professional tone and provide specific examples when possible. Focus on practical, implementable strategies that align with the user's specific topic: ${topic}.
+      const history: ChatCompletionMessageParam[] = conversationHistory.map(
+        (msg) => ({
+          role: msg.sender === "user" ? "user" : "assistant",
+          content: msg.text,
+        })
+      );
 
-Key principles:
-- Draw from evidence-based leadership development practices
-- Provide actionable next steps
-- Ask clarifying questions when helpful
-- Reference relevant frameworks and models from the knowledge base
-- Maintain confidentiality and professional coaching standards`;
-
-      const messages = [
-        { role: "system" as const, content: systemPrompt },
-        ...conversationHistory.map(msg => ({
-          role: msg.sender === 'user' ? 'user' as const : 'assistant' as const,
-          content: msg.text
-        })),
-        { role: "user" as const, content: userPrompt }
+      const messages: ChatCompletionMessageParam[] = [
+        { role: "system", content: systemPrompt },
+        ...history,
+        { role: "user", content: userPrompt },
       ];
 
-      const response = await openai.chat.completions.create({
-        model: "gpt-5",
-        messages: messages,
-        max_completion_tokens: 1000,
-        // Vector store integration will be added in future update
+      console.log("Making API call with payload:", {
+        model: "gpt-4",
+        messageCount: messages.length,
+        userPrompt: userPrompt.substring(0, 100)
       });
 
-      console.log("OpenAI API Response:", JSON.stringify(response, null, 2));
-      
-      const aiMessage = response.choices?.[0]?.message?.content;
+      const response = await openai.chat.completions.create({
+        model: "gpt-4", // Using stable model instead of gpt-5
+        messages,
+        max_completion_tokens: 1000, // Fixed parameter name
+        // No temperature parameter - using default
+      });
+
+      console.log("Full API Response:", JSON.stringify(response, null, 2));
+
+      const aiMessage = response.choices?.[0]?.message?.content?.trim();
+      console.log("Extracted AI message:", aiMessage ? "Present" : "Missing");
+      console.log("AI message length:", aiMessage ? aiMessage.length : 0);
       
       if (!aiMessage) {
-        console.error("No content in response:", response);
-        throw new Error("No response from AI");
+        console.error("Response structure:", {
+          choices: response.choices?.length || 0,
+          firstChoice: response.choices?.[0] || null,
+          message: response.choices?.[0]?.message || null
+        });
+        throw new Error("Empty completion from model");
       }
 
-      return {
-        message: aiMessage
-      };
-
+      return { message: aiMessage };
     } catch (error) {
       console.error("Error getting AI response:", error);
       return {
-        message: "I apologize, but I'm having trouble processing your request right now. Please try again in a moment.",
-        error: error instanceof Error ? error.message : "Unknown error"
+        message:
+          "Sorry, I’m having a hiccup processing that. Try again in a moment.",
+        error: error instanceof Error ? error.message : "Unknown error",
       };
     }
   }
 
-  async getTopicSpecificResponse(userInput: string, topic: string, conversationHistory: any[] = []): Promise<ChatResponse> {
-    const topicInstructions = {
-      'growth-profile': 'Focus on helping the user understand their current leadership strengths and growth areas. Reference relevant assessment frameworks and development models from the knowledge base. Provide actionable next steps.',
-      'red-green-zones': 'Help the user identify behaviors that serve them well (green zone) and those that limit effectiveness (red zone). Provide strategies for managing triggers and operating in the green zone.',
-      'big-practice': 'Guide the user in identifying and implementing their One Big Practice - the single leadership practice that will have the biggest impact on their effectiveness.',
-      '360-report': 'Assist with interpreting 360 feedback results and creating targeted development plans. Help bridge gaps between self-perception and others\' feedback.',
-      'growth-values': 'Help identify core values and how they should guide leadership growth. Focus on aligning actions with values and resolving value conflicts.',
-      'growth-matrix': 'Support creating a comprehensive leadership growth matrix that integrates all development areas. Focus on prioritization and implementation.',
-      'oora-conversation': 'Guide preparation for conversations using the OORA framework. Focus on structure, outcomes, and effective communication strategies.',
-      'daily-checkin': 'Facilitate daily reflection on One Big Practice and values alignment. Provide frameworks for continuous improvement and accountability.'
+  async getTopicSpecificResponse(
+    userInput: string,
+    topic: string,
+    conversationHistory: HistoryItem[] = []
+  ): Promise<ChatResponse> {
+    const topicInstructions: Record<string, string> = {
+      "growth-profile":
+        "Help the user understand strengths and growth areas. Use assessments and give next steps.",
+      "red-green-zones":
+        "Identify helpful (green) and limiting (red) behaviours. Offer trigger management strategies.",
+      "big-practice":
+        "Help select and implement the One Big Practice with highest impact.",
+      "360-report":
+        "Interpret 360 feedback and build a targeted development plan.",
+      "growth-values":
+        "Surface core values and align actions; resolve value conflicts.",
+      "growth-matrix":
+        "Create an integrated growth matrix with priorities and execution.",
+      "oora-conversation":
+        "Prepare conversations using OORA; emphasise structure and outcomes.",
+      "daily-checkin":
+        "Guide daily reflection on One Big Practice and values alignment.",
     };
 
-    const specificInstruction = topicInstructions[topic as keyof typeof topicInstructions] || topicInstructions['growth-profile'];
+    const specificInstruction =
+      topicInstructions[topic] ?? topicInstructions["growth-profile"];
 
-    return this.getLeadershipResponse(userInput, `${topic}: ${specificInstruction}`, conversationHistory);
+    return this.getLeadershipResponse(
+      userInput,
+      `${topic}: ${specificInstruction}`,
+      conversationHistory
+    );
   }
 }
 
 export const openaiService = new OpenAIService();
+
