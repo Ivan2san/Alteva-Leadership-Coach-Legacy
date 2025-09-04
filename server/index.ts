@@ -73,36 +73,23 @@ process.on('unhandledRejection', (reason, promise) => {
 
 console.log('Starting server initialization...');
 
-(async () => {
+async function startServer() {
   try {
-    console.log('Inside async IIFE...');
-    // Health check middleware - responds immediately for deployment health checks
-    app.use("/", (req, res, next) => {
-      // Only handle GET requests to root path
-      if (req.method !== 'GET' || req.path !== '/') {
-        return next();
-      }
-      
-      // Fast health check response for deployment systems
-      // These typically don't send Accept: text/html headers
-      const acceptsHtml = req.get('Accept')?.includes('text/html');
-      const userAgent = req.get('User-Agent') || '';
-      
-      // Respond immediately for health checks
-      if (!acceptsHtml || 
-          userAgent.includes('GoogleHC') || 
-          userAgent.includes('kube-probe') || 
-          userAgent.includes('curl') ||
-          userAgent.includes('Go-http-client')) {
-        return res.status(200).send("OK");
-      }
-      
-      // Continue to React app for browsers
-      next();
-    });
-
+    // Ultra-simple health check endpoints for deployment
     app.get("/health", (req, res) => {
       res.status(200).send("OK");
+    });
+
+    app.get("/", (req, res, next) => {
+      // For deployment health checks, always respond OK first
+      if (req.path === '/' && req.method === 'GET') {
+        // Simple check: if no HTML accept header, it's likely a health check
+        if (!req.get('Accept')?.includes('text/html')) {
+          return res.status(200).send("OK");
+        }
+      }
+      // Continue to React app for browsers
+      next();
     });
 
     // Register routes after health checks
@@ -169,20 +156,33 @@ console.log('Starting server initialization...');
       console.log('Server listening event fired');
     });
 
-    // Keep the process alive - this ensures the async IIFE doesn't complete
-    console.log('Server setup complete, keeping process alive...');
+    // Server setup complete - keep process alive
+    console.log('Server setup complete, starting keep-alive loop');
     
-    // Return a never-resolving promise to keep the async function alive
-    return new Promise(() => {
-      // This promise never resolves, keeping the async function running forever
-      console.log('Process will remain alive to serve requests...');
+    // Keep the process alive with a simple while loop
+    let isRunning = true;
+    
+    process.once('SIGTERM', () => {
+      console.log('Received SIGTERM, shutting down gracefully');
+      isRunning = false;
+      serverInstance.close();
     });
+    
+    // Keep the process alive with minimal logging
+    while (isRunning) {
+      await new Promise(resolve => setTimeout(resolve, 30000)); // 30 second intervals
+    }
+    
+    console.log('Server shutting down');
     
   } catch (error) {
     console.error("Fatal server startup error:", error);
     process.exit(1);
   }
-})().catch((error) => {
+}
+
+// Start the server
+startServer().catch((error) => {
   console.error("Unhandled server error:", error);
   process.exit(1);
 });

@@ -87,18 +87,19 @@ export async function migrateExistingData(adminUserId: string) {
 }
 
 // Auto-run seeding if called directly
-if (import.meta.url === `file://${process.argv[1]}`) {
-  seedAdminUser()
-    .then((adminUser) => {
-      if (adminUser) {
-        return migrateExistingData(adminUser.id);
-      }
-    })
-    .then(() => {
-      process.exit(0);
-    })
-    .catch((error) => {
-      console.error("Seeding failed:", error);
-      process.exit(1);
-    });
-}
+// DISABLED FOR PRODUCTION: This check might be causing issues in bundled environments
+// if (import.meta.url === `file://${process.argv[1]}`) {
+//   seedAdminUser()
+//     .then((adminUser) => {
+//       if (adminUser) {
+//         return migrateExistingData(adminUser.id);
+//       }
+//     })
+//     .then(() => {
+//       process.exit(0);
+//     })
+//     .catch((error) => {
+//       console.error("Seeding failed:", error);
+//       process.exit(1);
+//     });
+// }
