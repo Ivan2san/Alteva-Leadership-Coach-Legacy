@@ -13,6 +13,7 @@ import {
 } from "@shared/schema";
 import { ObjectStorageService } from "./objectStorage";
 import { registerAuthRoutes } from "./auth-routes";
+import { authenticateUser } from "./middleware/auth";
 import cookieParser from "cookie-parser";
 import multer from "multer";
 import { z } from "zod";
@@ -63,11 +64,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const authHeader = req.headers.authorization;
       if (authHeader?.startsWith('Bearer ')) {
         try {
+          const { verifyToken } = await import("./auth");
           const token = authHeader.substring(7);
-          const jwt = await import('jsonwebtoken');
-          const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback-secret') as { userId: string };
-          const user = await storage.getUser(decoded.userId);
-          userLGP360Data = user?.lgp360Data as LGP360ReportData | undefined;
+          const decoded = verifyToken(token);
+          if (decoded) {
+            const user = await storage.getUser(decoded.userId);
+            userLGP360Data = user?.lgp360Data as LGP360ReportData | undefined;
+          }
         } catch (error) {
           // If token is invalid or user not found, continue without personalization
           console.log("Could not get user data for personalization:", error);
@@ -502,26 +505,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // LGP360 Report endpoints
-  app.post("/api/lgp360", async (req, res) => {
+  app.post("/api/lgp360", authenticateUser, async (req, res) => {
     try {
-      // Get user from token
-      const authHeader = req.headers.authorization;
-      if (!authHeader?.startsWith('Bearer ')) {
-        return res.status(401).json({ error: "Unauthorized" });
-      }
-
-      const token = authHeader.substring(7);
-      const jwt = await import('jsonwebtoken');
-      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback-secret') as { userId: string };
-      
       // Validate LGP360 data
       const validationResult = lgp360ReportSchema.safeParse(req.body);
       if (!validationResult.success) {
         return res.status(400).json({ error: "Invalid LGP360 data", details: validationResult.error.errors });
       }
 
-      // Save LGP360 data to user profile
-      const updatedUser = await storage.updateUserLGP360(decoded.userId, validationResult.data);
+      // Save LGP360 data to user profile (user is available from middleware)
+      const updatedUser = await storage.updateUserLGP360(req.user!.id, validationResult.data);
       if (!updatedUser) {
         return res.status(404).json({ error: "User not found" });
       }
@@ -534,23 +527,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // AI Document Analysis endpoint
-  app.post("/api/lgp360/analyze", upload.single('document'), async (req, res) => {
+  app.post("/api/lgp360/analyze", authenticateUser, upload.single('document'), async (req, res) => {
     try {
-      // Get user from token
-      const authHeader = req.headers.authorization;
-      if (!authHeader?.startsWith('Bearer ')) {
-        return res.status(401).json({ error: "Unauthorized" });
-      }
-
-      const token = authHeader.substring(7);
-      const jwt = await import('jsonwebtoken');
-      const decoded = jwt.default.verify(token, process.env.JWT_SECRET || 'fallback-secret') as { userId: string };
-
       if (!req.file) {
         return res.status(400).json({ error: "No document uploaded" });
       }
 
-      // Process document with AI
+      // Process document with AI (user is available from middleware)
       const analyzedData = await openaiService.analyzeDocument(req.file.buffer, req.file.originalname, req.file.mimetype);
       
       res.json(analyzedData);
