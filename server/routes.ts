@@ -14,11 +14,28 @@ import {
 import { ObjectStorageService } from "./objectStorage";
 import { registerAuthRoutes } from "./auth-routes";
 import cookieParser from "cookie-parser";
+import multer from "multer";
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Middleware
   app.use(cookieParser());
+  
+  // Multer configuration for file uploads
+  const upload = multer({
+    limits: {
+      fileSize: 10 * 1024 * 1024, // 10MB limit
+    },
+    fileFilter: (req, file, cb) => {
+      const allowedTypes = [
+        'application/pdf',
+        'text/plain',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+      ];
+      cb(null, allowedTypes.includes(file.mimetype));
+    },
+  });
   
   // Register authentication routes
   registerAuthRoutes(app);
@@ -513,6 +530,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Save LGP360 report error:", error);
       res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // AI Document Analysis endpoint
+  app.post("/api/lgp360/analyze", upload.single('document'), async (req, res) => {
+    try {
+      // Get user from token
+      const authHeader = req.headers.authorization;
+      if (!authHeader?.startsWith('Bearer ')) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+
+      const token = authHeader.substring(7);
+      const jwt = await import('jsonwebtoken');
+      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback-secret') as { userId: string };
+
+      if (!req.file) {
+        return res.status(400).json({ error: "No document uploaded" });
+      }
+
+      // Process document with AI
+      const analyzedData = await openaiService.analyzeDocument(req.file.buffer, req.file.originalname, req.file.mimetype);
+      
+      res.json(analyzedData);
+    } catch (error) {
+      console.error("Document analysis error:", error);
+      res.status(500).json({ error: "Failed to analyze document" });
     }
   });
 

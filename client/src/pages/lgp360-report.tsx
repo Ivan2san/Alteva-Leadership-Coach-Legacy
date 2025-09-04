@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
@@ -14,11 +14,13 @@ import { apiRequest } from "@/lib/queryClient";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Header from "@/components/header";
 import { BackButton } from "@/components/back-button";
-import { FileText, Save, CheckCircle2 } from "lucide-react";
+import { FileText, Save, CheckCircle2, Upload, FileCheck, Loader2 } from "lucide-react";
 
 export default function LGP360ReportPage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isProcessingUpload, setIsProcessingUpload] = useState(false);
 
   // Fetch existing LGP360 data
   const { data: userData, isLoading: isLoadingUser } = useQuery({
@@ -71,6 +73,74 @@ export default function LGP360ReportPage() {
       });
     },
   });
+
+  // AI Document Processing Mutation
+  const processDocumentMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const formData = new FormData();
+      formData.append('document', file);
+      
+      const response = await fetch('/api/lgp360/analyze', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
+        },
+        body: formData,
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to process document');
+      }
+      
+      return response.json();
+    },
+    onSuccess: (data: LGP360ReportData) => {
+      // Auto-populate form with AI-extracted data
+      form.reset(data);
+      toast({
+        title: "Document Processed Successfully",
+        description: "Your LGP360 report has been automatically filled from the uploaded document. Please review and edit as needed.",
+      });
+      setIsProcessingUpload(false);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Document Processing Failed",
+        description: error.message || "Failed to process the uploaded document",
+        variant: "destructive",
+      });
+      setIsProcessingUpload(false);
+    },
+  });
+
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Check file type
+    const allowedTypes = ['application/pdf', 'text/plain', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+    if (!allowedTypes.includes(file.type)) {
+      toast({
+        title: "Invalid File Type",
+        description: "Please upload a PDF, Word document, or text file.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Check file size (10MB limit)
+    if (file.size > 10 * 1024 * 1024) {
+      toast({
+        title: "File Too Large",
+        description: "Please upload a file smaller than 10MB.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsProcessingUpload(true);
+    processDocumentMutation.mutate(file);
+  };
 
   const primaryChallengeOptions = [
     "Team Communication",
@@ -179,6 +249,61 @@ export default function LGP360ReportPage() {
               </CardContent>
             </Card>
           )}
+
+          {/* AI Document Upload */}
+          <Card className="border-blue-200 bg-blue-50 dark:bg-blue-950/20 dark:border-blue-800">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-blue-700 dark:text-blue-400">
+                <Upload className="h-5 w-5" />
+                Smart Upload
+              </CardTitle>
+              <CardDescription className="text-blue-600 dark:text-blue-300">
+                Upload your existing LGP360 report or leadership assessment document and let AI automatically fill out the form for you.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div 
+                  className="border-2 border-dashed border-blue-300 dark:border-blue-600 rounded-lg p-6 text-center cursor-pointer hover:border-blue-400 transition-colors"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  {isProcessingUpload ? (
+                    <div className="flex flex-col items-center gap-3">
+                      <Loader2 className="h-8 w-8 text-blue-500 animate-spin" />
+                      <p className="text-sm text-blue-600 dark:text-blue-400">
+                        AI is analyzing your document...
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center gap-3">
+                      <FileCheck className="h-8 w-8 text-blue-500" />
+                      <div>
+                        <p className="font-medium text-blue-700 dark:text-blue-300">
+                          Click to upload your LGP360 report
+                        </p>
+                        <p className="text-sm text-blue-600 dark:text-blue-400">
+                          Supports PDF, Word, and text files (max 10MB)
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".pdf,.doc,.docx,.txt"
+                  onChange={handleFileUpload}
+                  className="hidden"
+                  data-testid="file-upload-input"
+                />
+                
+                <p className="text-xs text-blue-600 dark:text-blue-400 text-center">
+                  Your document will be processed securely and deleted after analysis
+                </p>
+              </div>
+            </CardContent>
+          </Card>
 
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">

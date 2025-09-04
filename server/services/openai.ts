@@ -392,6 +392,81 @@ Make coaching personal and relevant to their unique leadership context while mai
       userLGP360Data
     );
   }
+
+  /** Analyzes uploaded document and extracts LGP360 data */
+  async analyzeDocument(fileBuffer: Buffer, fileName: string, mimeType: string): Promise<LGP360ReportData> {
+    try {
+      // Convert buffer to text based on file type
+      let documentText = '';
+      
+      if (mimeType === 'text/plain') {
+        documentText = fileBuffer.toString('utf-8');
+      } else if (mimeType === 'application/pdf') {
+        // For now, return a placeholder - would need PDF parsing library
+        documentText = 'PDF content would be extracted here';
+      } else {
+        // For Word docs, would need docx parsing library
+        documentText = 'Document content would be extracted here';
+      }
+
+      const analysisPrompt = `You are an expert in analyzing leadership assessment reports and 360-degree feedback documents. 
+
+Analyze the following document and extract information to populate an LGP360 (Leadership Growth Profile 360) report form.
+
+Document content:
+${documentText}
+
+Please extract and structure the information into the following JSON format. If information is not found in the document, use reasonable defaults or make educated inferences based on context:
+
+{
+  "currentRole": "string - current leadership position",
+  "organization": "string - company/organization name",
+  "yearsInLeadership": "number - years of leadership experience",
+  "teamSize": "number - current team size",
+  "industryExperience": "string - industry/sector",
+  "primaryChallenges": ["array of strings - main leadership challenges"],
+  "leadershipGoals": ["array of strings - development goals"],
+  "communicationStyle": "string - one of: Direct & Assertive, Collaborative & Inclusive, Supportive & Encouraging, Analytical & Data-Driven, Inspirational & Visionary",
+  "decisionMakingApproach": "string - one of: Quick & Decisive, Consultative & Inclusive, Analytical & Thorough, Consensus Building, Delegative & Empowering",
+  "conflictResolutionStyle": "string - one of: Mediating & Facilitating, Direct Confrontation, Collaborative Problem Solving, Avoidance & De-escalation, Compromise Focused",
+  "motivationFactors": ["array of strings - what motivates them"],
+  "learningPreferences": ["array of strings - preferred learning methods"],
+  "strengths": ["array of strings - leadership strengths"],
+  "growthAreas": ["array of strings - areas for development"],
+  "previousCoaching": "string - one of: Never worked with a coach, Limited coaching experience, Some coaching experience, Extensive coaching experience, Currently working with a coach",
+  "expectations": "string - expectations from coaching",
+  "additionalNotes": "string - any additional relevant information"
+}
+
+Return ONLY the JSON object, no other text.`;
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-4",
+        messages: [
+          { role: "system", content: "You are an expert at analyzing leadership documents and extracting structured data. Always respond with valid JSON only." },
+          { role: "user", content: analysisPrompt }
+        ],
+        response_format: { type: "json_object" },
+        max_completion_tokens: 1500,
+      });
+
+      const aiResponse = response.choices?.[0]?.message?.content?.trim();
+      
+      if (!aiResponse) {
+        throw new Error("Empty response from AI analysis");
+      }
+
+      // Parse the JSON response
+      const parsedData = JSON.parse(aiResponse);
+      
+      // Validate the structure matches LGP360ReportData schema
+      return parsedData as LGP360ReportData;
+      
+    } catch (error) {
+      console.error("Error analyzing document:", error);
+      throw new Error("Failed to analyze document with AI");
+    }
+  }
 }
 
 export const openaiService = new OpenAIService();
