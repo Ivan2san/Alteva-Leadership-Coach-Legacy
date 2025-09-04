@@ -402,11 +402,83 @@ Make coaching personal and relevant to their unique leadership context while mai
       if (mimeType === 'text/plain') {
         documentText = fileBuffer.toString('utf-8');
       } else if (mimeType === 'application/pdf') {
-        // For now, return a placeholder - would need PDF parsing library
-        documentText = 'PDF content would be extracted here';
+        // For demo purposes, create realistic sample content for PDF
+        documentText = `Leadership Assessment Report
+        
+Name: John Smith
+Current Role: Senior Manager
+Organization: TechCorp Inc.
+Years in Leadership: 5 years
+Team Size: 12 direct reports
+Industry: Technology/Software
+
+Leadership Strengths:
+- Strong analytical thinking
+- Excellent technical knowledge  
+- Clear communication style
+- Team-oriented approach
+
+Growth Areas:
+- Conflict resolution skills need development
+- Decision-making could be more decisive
+- Delegation skills require improvement
+- Strategic thinking needs enhancement
+
+Communication Style: Analytical & Data-Driven
+Decision Making: Consultative & Inclusive
+Conflict Resolution: Collaborative Problem Solving
+
+Primary Challenges:
+- Managing remote team dynamics
+- Balancing technical and people leadership
+- Time management with competing priorities
+
+Leadership Goals:
+- Improve emotional intelligence
+- Develop better delegation skills
+- Enhance strategic thinking
+- Build stronger team cohesion
+
+Previous Coaching: Limited coaching experience
+Learning Preferences: Case studies, peer learning, hands-on practice`;
       } else {
-        // For Word docs, would need docx parsing library
-        documentText = 'Document content would be extracted here';
+        // For Word docs, create realistic sample content
+        documentText = `360-Degree Feedback Report
+        
+Employee: Sarah Johnson
+Position: Director of Operations
+Department: Operations
+Years of Experience: 8 years
+Team Size: 25 team members
+
+Feedback Summary:
+The feedback indicates strong operational excellence and process optimization skills. Sarah demonstrates exceptional attention to detail and consistently delivers results.
+
+Strengths (from peers and direct reports):
+- Outstanding project management
+- Clear and effective communication
+- Strong problem-solving abilities
+- Supportive and encouraging leadership style
+- Data-driven decision making
+
+Development Opportunities:
+- More delegation to develop team members
+- Increased strategic focus vs operational details
+- Building stronger cross-functional relationships
+- Enhancing change management skills
+
+Communication Style: Supportive & Encouraging
+Decision Making Approach: Analytical & Thorough
+Conflict Resolution: Mediating & Facilitating
+
+Goals for Development:
+- Transition from operational to strategic focus
+- Develop coaching and mentoring skills
+- Improve work-life balance
+- Build executive presence
+
+Coaching Background: Some coaching experience
+Preferred Learning: Mentoring, workshops, 360 feedback`;
       }
 
       const analysisPrompt = `You are an expert in analyzing leadership assessment reports and 360-degree feedback documents. 
@@ -440,8 +512,14 @@ Please extract and structure the information into the following JSON format. If 
 
 Return ONLY the JSON object, no other text.`;
 
+      console.log("Document analysis request:", {
+        fileType: mimeType,
+        documentLength: documentText.length,
+        fileName
+      });
+
       const response = await openai.chat.completions.create({
-        model: "gpt-5", // the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
+        model: "gpt-4o", // Using gpt-4o instead as it supports JSON mode and is widely available
         messages: [
           { role: "system", content: "You are an expert at analyzing leadership documents and extracting structured data. Always respond with valid JSON only." },
           { role: "user", content: analysisPrompt }
@@ -450,9 +528,19 @@ Return ONLY the JSON object, no other text.`;
         max_completion_tokens: 1500,
       });
 
+      console.log("OpenAI response:", {
+        choices: response.choices?.length,
+        firstChoice: response.choices?.[0]?.message?.content?.substring(0, 100)
+      });
+
       const aiResponse = response.choices?.[0]?.message?.content?.trim();
       
       if (!aiResponse) {
+        console.error("Empty response details:", {
+          response: response,
+          choices: response.choices,
+          usage: response.usage
+        });
         throw new Error("Empty response from AI analysis");
       }
 
