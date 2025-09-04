@@ -41,6 +41,21 @@ export const knowledgeBaseFiles = pgTable("knowledge_base_files", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+export const promptTemplates = pgTable("prompt_templates", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  category: text("category").notNull(), // "coaching", "reflection", "goal-setting", etc.
+  description: text("description"),
+  template: text("template").notNull(), // The prompt template with placeholders
+  variables: text("variables").array().default([]), // Variable names in the template
+  tags: text("tags").array().default([]),
+  isDefault: boolean("is_default").default(false),
+  usageCount: integer("usage_count").default(0),
+  createdBy: varchar("created_by"), // future user reference
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   password: true,
@@ -59,12 +74,21 @@ export const insertKnowledgeBaseFileSchema = createInsertSchema(knowledgeBaseFil
   updatedAt: true,
 });
 
+export const insertPromptTemplateSchema = createInsertSchema(promptTemplates).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  usageCount: true,
+});
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 export type Conversation = typeof conversations.$inferSelect;
 export type InsertConversation = z.infer<typeof insertConversationSchema>;
 export type KnowledgeBaseFile = typeof knowledgeBaseFiles.$inferSelect;
 export type InsertKnowledgeBaseFile = z.infer<typeof insertKnowledgeBaseFileSchema>;
+export type PromptTemplate = typeof promptTemplates.$inferSelect;
+export type InsertPromptTemplate = z.infer<typeof insertPromptTemplateSchema>;
 
 export const messageSchema = z.object({
   id: z.string(),

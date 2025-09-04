@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Menu, Users, Database, MessageSquare } from "lucide-react";
+import { Menu, Users, Database, MessageSquare, BarChart3, FileText } from "lucide-react";
 import { Link } from "wouter";
 
 interface HeaderProps {
@@ -20,6 +20,24 @@ export default function Header({ onMenuClick }: HeaderProps) {
             </Link>
           </div>
           <div className="flex items-center space-x-2">
+            <Link href="/prompt-library">
+              <Button 
+                variant="ghost" 
+                size="sm"
+                data-testid="prompt-library-link"
+              >
+                <FileText className="text-muted-foreground" size={16} />
+              </Button>
+            </Link>
+            <Link href="/analytics">
+              <Button 
+                variant="ghost" 
+                size="sm"
+                data-testid="analytics-link"
+              >
+                <BarChart3 className="text-muted-foreground" size={16} />
+              </Button>
+            </Link>
             <Link href="/conversations">
               <Button 
                 variant="ghost" 

@@ -5,12 +5,15 @@ import {
   type InsertConversation,
   type KnowledgeBaseFile,
   type InsertKnowledgeBaseFile,
+  type PromptTemplate,
+  type InsertPromptTemplate,
   users, 
   conversations, 
-  knowledgeBaseFiles
+  knowledgeBaseFiles,
+  promptTemplates
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, ilike, or, desc, and } from "drizzle-orm";
+import { eq, ilike, or, desc, and, count, avg, sql } from "drizzle-orm";
 
 export interface IStorage {
   // User operations
@@ -28,6 +31,25 @@ export interface IStorage {
   getConversationsByTopic(topic: string): Promise<Conversation[]>;
   starConversation(id: string, isStarred: boolean): Promise<Conversation | undefined>;
   archiveConversation(id: string): Promise<Conversation | undefined>;
+  
+  // Analytics operations
+  getConversationStats(): Promise<{
+    total: number;
+    byTopic: { topic: string; count: number; avgMessages: number }[];
+    byStatus: { status: string; count: number }[];
+    recentActivity: { date: string; count: number }[];
+    totalMessages: number;
+    avgConversationLength: number;
+  }>;
+  getTopicEngagement(): Promise<{ topic: string; totalMessages: number; avgLength: number; lastUsed: string }[]>;
+  
+  // Prompt template operations
+  createPromptTemplate(template: InsertPromptTemplate): Promise<PromptTemplate>;
+  getPromptTemplates(category?: string): Promise<PromptTemplate[]>;
+  getPromptTemplate(id: string): Promise<PromptTemplate | undefined>;
+  updatePromptTemplate(id: string, updates: Partial<PromptTemplate>): Promise<PromptTemplate | undefined>;
+  deletePromptTemplate(id: string): Promise<boolean>;
+  incrementTemplateUsage(id: string): Promise<void>;
   
   // Knowledge base file operations
   createKnowledgeBaseFile(file: InsertKnowledgeBaseFile): Promise<KnowledgeBaseFile>;
@@ -134,6 +156,137 @@ export class DatabaseStorage implements IStorage {
       .where(eq(conversations.id, id))
       .returning();
     return conversation;
+  }
+
+  // Analytics operations
+  async getConversationStats() {
+    // Get total conversations
+    const totalResult = await db.select({ count: count() }).from(conversations);
+    const total = totalResult[0]?.count || 0;
+
+    // Get conversations by topic
+    const byTopicResult = await db
+      .select({
+        topic: conversations.topic,
+        count: count(),
+        avgMessages: avg(conversations.messageCount)
+      })
+      .from(conversations)
+      .groupBy(conversations.topic);
+
+    // Get conversations by status
+    const byStatusResult = await db
+      .select({
+        status: conversations.status,
+        count: count()
+      })
+      .from(conversations)
+      .groupBy(conversations.status);
+
+    // Get recent activity (last 30 days)
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    
+    const recentActivityResult = await db
+      .select({
+        date: sql<string>`DATE(${conversations.createdAt})`,
+        count: count()
+      })
+      .from(conversations)
+      .where(sql`${conversations.createdAt} >= ${thirtyDaysAgo}`)
+      .groupBy(sql`DATE(${conversations.createdAt})`)
+      .orderBy(sql`DATE(${conversations.createdAt})`);
+
+    // Get total messages and average conversation length
+    const statsResult = await db
+      .select({
+        totalMessages: sql<number>`COALESCE(SUM(${conversations.messageCount}), 0)`,
+        avgLength: sql<number>`COALESCE(AVG(${conversations.messageCount}), 0)`
+      })
+      .from(conversations);
+
+    return {
+      total,
+      byTopic: byTopicResult.map(row => ({
+        topic: row.topic,
+        count: Number(row.count),
+        avgMessages: Number(row.avgMessages) || 0
+      })),
+      byStatus: byStatusResult.map(row => ({
+        status: row.status || 'unknown',
+        count: Number(row.count)
+      })),
+      recentActivity: recentActivityResult.map(row => ({
+        date: row.date,
+        count: Number(row.count)
+      })),
+      totalMessages: Number(statsResult[0]?.totalMessages) || 0,
+      avgConversationLength: Number(statsResult[0]?.avgLength) || 0
+    };
+  }
+
+  async getTopicEngagement() {
+    const result = await db
+      .select({
+        topic: conversations.topic,
+        totalMessages: sql<number>`COALESCE(SUM(${conversations.messageCount}), 0)`,
+        avgLength: sql<number>`COALESCE(AVG(${conversations.messageCount}), 0)`,
+        lastUsed: sql<string>`MAX(${conversations.lastMessageAt})`
+      })
+      .from(conversations)
+      .where(eq(conversations.status, 'active'))
+      .groupBy(conversations.topic)
+      .orderBy(desc(sql<number>`COALESCE(SUM(${conversations.messageCount}), 0)`));
+
+    return result.map(row => ({
+      topic: row.topic,
+      totalMessages: Number(row.totalMessages),
+      avgLength: Number(row.avgLength),
+      lastUsed: row.lastUsed || ''
+    }));
+  }
+
+  // Prompt template operations
+  async createPromptTemplate(template: InsertPromptTemplate): Promise<PromptTemplate> {
+    const [promptTemplate] = await db.insert(promptTemplates).values(template).returning();
+    return promptTemplate;
+  }
+
+  async getPromptTemplates(category?: string): Promise<PromptTemplate[]> {
+    const query = db.select().from(promptTemplates);
+    if (category) {
+      return await query.where(eq(promptTemplates.category, category)).orderBy(desc(promptTemplates.usageCount));
+    }
+    return await query.orderBy(desc(promptTemplates.usageCount));
+  }
+
+  async getPromptTemplate(id: string): Promise<PromptTemplate | undefined> {
+    const [template] = await db.select().from(promptTemplates).where(eq(promptTemplates.id, id));
+    return template;
+  }
+
+  async updatePromptTemplate(id: string, updates: Partial<PromptTemplate>): Promise<PromptTemplate | undefined> {
+    const [template] = await db
+      .update(promptTemplates)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(promptTemplates.id, id))
+      .returning();
+    return template;
+  }
+
+  async deletePromptTemplate(id: string): Promise<boolean> {
+    const result = await db.delete(promptTemplates).where(eq(promptTemplates.id, id));
+    return (result.rowCount ?? 0) > 0;
+  }
+
+  async incrementTemplateUsage(id: string): Promise<void> {
+    await db
+      .update(promptTemplates)
+      .set({ 
+        usageCount: sql`${promptTemplates.usageCount} + 1`,
+        updatedAt: new Date()
+      })
+      .where(eq(promptTemplates.id, id));
   }
 
   // Knowledge base file operations

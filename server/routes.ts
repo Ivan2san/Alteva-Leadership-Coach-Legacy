@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { openaiService } from "./services/openai";
-import { insertConversationSchema, messageSchema, insertKnowledgeBaseFileSchema } from "@shared/schema";
+import { insertConversationSchema, messageSchema, insertKnowledgeBaseFileSchema, insertPromptTemplateSchema } from "@shared/schema";
 import { ObjectStorageService } from "./objectStorage";
 import { z } from "zod";
 
@@ -176,6 +176,104 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     } catch (error) {
       console.error("Export conversation error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Analytics endpoints
+  app.get("/api/analytics/stats", async (req, res) => {
+    try {
+      const stats = await storage.getConversationStats();
+      res.json(stats);
+    } catch (error) {
+      console.error("Analytics stats error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.get("/api/analytics/topic-engagement", async (req, res) => {
+    try {
+      const engagement = await storage.getTopicEngagement();
+      res.json(engagement);
+    } catch (error) {
+      console.error("Topic engagement error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Prompt template endpoints
+  app.post("/api/prompt-templates", async (req, res) => {
+    try {
+      const validationResult = insertPromptTemplateSchema.safeParse(req.body);
+      if (!validationResult.success) {
+        return res.status(400).json({ error: "Invalid prompt template data" });
+      }
+
+      const template = await storage.createPromptTemplate(validationResult.data);
+      res.json(template);
+    } catch (error) {
+      console.error("Create prompt template error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.get("/api/prompt-templates", async (req, res) => {
+    try {
+      const { category } = req.query;
+      const templates = await storage.getPromptTemplates(category as string);
+      res.json(templates);
+    } catch (error) {
+      console.error("Get prompt templates error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.get("/api/prompt-templates/:id", async (req, res) => {
+    try {
+      const template = await storage.getPromptTemplate(req.params.id);
+      if (!template) {
+        return res.status(404).json({ error: "Prompt template not found" });
+      }
+      res.json(template);
+    } catch (error) {
+      console.error("Get prompt template error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.patch("/api/prompt-templates/:id", async (req, res) => {
+    try {
+      const updates = req.body;
+      const template = await storage.updatePromptTemplate(req.params.id, updates);
+      if (!template) {
+        return res.status(404).json({ error: "Prompt template not found" });
+      }
+      res.json(template);
+    } catch (error) {
+      console.error("Update prompt template error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.delete("/api/prompt-templates/:id", async (req, res) => {
+    try {
+      const success = await storage.deletePromptTemplate(req.params.id);
+      if (!success) {
+        return res.status(404).json({ error: "Prompt template not found" });
+      }
+      res.status(204).send();
+    } catch (error) {
+      console.error("Delete prompt template error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.post("/api/prompt-templates/:id/use", async (req, res) => {
+    try {
+      await storage.incrementTemplateUsage(req.params.id);
+      res.status(200).json({ success: true });
+    } catch (error) {
+      console.error("Increment template usage error:", error);
       res.status(500).json({ error: "Internal server error" });
     }
   });
