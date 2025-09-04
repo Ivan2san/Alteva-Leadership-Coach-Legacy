@@ -12,6 +12,7 @@ import Conversations from "@/pages/conversations";
 import Analytics from "@/pages/analytics";
 import PromptLibrary from "@/pages/prompt-library";
 import Settings from "@/pages/settings";
+import WelcomeGuide from "@/pages/welcome-guide";
 import Login from "@/pages/login";
 import Signup from "@/pages/signup";
 import NotFound from "@/pages/not-found";
@@ -29,6 +30,7 @@ function Router() {
       <Route path="/analytics" component={Analytics} />
       <Route path="/prompt-library" component={PromptLibrary} />
       <Route path="/settings" component={Settings} />
+      <Route path="/guide" component={WelcomeGuide} />
       <Route component={NotFound} />
     </Switch>
   );

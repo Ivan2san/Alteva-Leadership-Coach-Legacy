@@ -61,8 +61,8 @@ export default function SignupPage() {
         description: `Welcome to Leadership Coach, ${result.user.fullName}!`,
       });
 
-      // Redirect to home page
-      setLocation("/");
+      // Redirect to welcome guide for new users
+      setLocation("/guide?welcome=true");
     } catch (error) {
       console.error("Signup error:", error);
       toast({
