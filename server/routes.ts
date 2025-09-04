@@ -4,9 +4,16 @@ import { storage } from "./storage";
 import { openaiService } from "./services/openai";
 import { insertConversationSchema, messageSchema, insertKnowledgeBaseFileSchema, insertPromptTemplateSchema } from "@shared/schema";
 import { ObjectStorageService } from "./objectStorage";
+import { registerAuthRoutes } from "./auth-routes";
+import cookieParser from "cookie-parser";
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Middleware
+  app.use(cookieParser());
+  
+  // Register authentication routes
+  registerAuthRoutes(app);
   
   // Chat endpoint
   app.post("/api/chat", async (req, res) => {

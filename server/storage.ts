@@ -1,25 +1,32 @@
 import { 
   type User, 
   type InsertUser, 
+  type SignupData,
+  type LoginData,
   type Conversation, 
   type InsertConversation,
   type KnowledgeBaseFile,
   type InsertKnowledgeBaseFile,
   type PromptTemplate,
   type InsertPromptTemplate,
+  createUserSchema,
   users, 
   conversations, 
   knowledgeBaseFiles,
   promptTemplates
 } from "@shared/schema";
+import { hashPassword, verifyPassword } from "./auth";
 import { db } from "./db";
 import { eq, ilike, or, desc, and, count, avg, sql } from "drizzle-orm";
 
 export interface IStorage {
   // User operations
   getUser(id: string): Promise<User | undefined>;
-  getUserByUsername(username: string): Promise<User | undefined>;
-  createUser(user: InsertUser): Promise<User>;
+  getUserByEmail(email: string): Promise<User | undefined>;
+  createUser(userData: Pick<SignupData, 'email' | 'password' | 'fullName' | 'role'>): Promise<User>;
+  validateLogin(email: string, password: string): Promise<User | null>;
+  updateUser(id: string, updates: Partial<User>): Promise<User | undefined>;
+  getAllUsers(): Promise<User[]>;
   
   // Conversation operations
   createConversation(conversation: InsertConversation): Promise<Conversation>;
@@ -67,14 +74,41 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
-  async getUserByUsername(username: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.username, username));
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.email, email));
     return user;
   }
 
-  async createUser(insertUser: InsertUser): Promise<User> {
-    const [user] = await db.insert(users).values(insertUser).returning();
+  async createUser(userData: Pick<SignupData, 'email' | 'password' | 'fullName' | 'role'>): Promise<User> {
+    const hashedPassword = await hashPassword(userData.password);
+    const [user] = await db.insert(users).values({
+      email: userData.email,
+      password: hashedPassword,
+      fullName: userData.fullName,
+      role: userData.role || 'user'
+    }).returning();
     return user;
+  }
+
+  async validateLogin(email: string, password: string): Promise<User | null> {
+    const user = await this.getUserByEmail(email);
+    if (!user) return null;
+    
+    const isValid = await verifyPassword(password, user.password);
+    return isValid ? user : null;
+  }
+
+  async updateUser(id: string, updates: Partial<User>): Promise<User | undefined> {
+    const [user] = await db
+      .update(users)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(users.id, id))
+      .returning();
+    return user;
+  }
+
+  async getAllUsers(): Promise<User[]> {
+    return await db.select().from(users).orderBy(desc(users.createdAt));
   }
 
   // Conversation operations

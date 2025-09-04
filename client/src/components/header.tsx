@@ -1,18 +1,22 @@
 import { Button } from "@/components/ui/button";
-import { Menu, Users, Database, MessageSquare, BarChart3, FileText, Home } from "lucide-react";
+import { Menu, Users, Database, MessageSquare, BarChart3, FileText, Home, LogOut } from "lucide-react";
 import { Link } from "wouter";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useAuth } from "@/hooks/useAuth";
 
 interface HeaderProps {
   onMenuClick?: () => void;
 }
 
 export default function Header({ onMenuClick }: HeaderProps) {
+  const { user, logout, isAdmin } = useAuth();
+
   return (
     <header className="bg-card shadow-sm border-b border-border sticky top-0 z-50">
       <div className="max-w-md mx-auto px-4 py-4">
@@ -68,6 +72,20 @@ export default function Header({ onMenuClick }: HeaderProps) {
                     <span>Knowledge</span>
                   </Link>
                 </DropdownMenuItem>
+                
+                <DropdownMenuSeparator />
+                
+                {user && (
+                  <>
+                    <div className="px-2 py-1.5 text-sm text-gray-600 dark:text-gray-400">
+                      {user.fullName} {isAdmin && "(Admin)"}
+                    </div>
+                    <DropdownMenuItem onClick={logout} className="flex items-center w-full text-red-600 focus:text-red-600">
+                      <LogOut className="mr-2 h-4 w-4" />
+                      <span>Logout</span>
+                    </DropdownMenuItem>
+                  </>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
