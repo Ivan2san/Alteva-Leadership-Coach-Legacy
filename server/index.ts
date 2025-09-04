@@ -54,13 +54,32 @@ app.use((req, res, next) => {
 
 (async () => {
   try {
-    // Add health check endpoint - use /health only to avoid interfering with frontend
+    // Add health check endpoints
     app.get("/health", (req, res) => {
       res.status(200).json({ 
         status: "healthy", 
         timestamp: new Date().toISOString(),
         uptime: process.uptime()
       });
+    });
+
+    // Smart root endpoint: health check for Cloud Run, React app for browsers
+    app.get("/", (req, res, next) => {
+      // Cloud Run and other automated health checks typically don't send Accept: text/html
+      const userAgent = req.get('User-Agent') || '';
+      const acceptsHtml = req.accepts('html');
+      
+      // If this looks like an automated health check request
+      if (!acceptsHtml || userAgent.includes('GoogleHC') || userAgent.includes('kube-probe') || userAgent.includes('curl')) {
+        return res.status(200).json({ 
+          status: "healthy", 
+          timestamp: new Date().toISOString(),
+          uptime: process.uptime()
+        });
+      }
+      
+      // For browser requests, continue to serve React app
+      next();
     });
 
     // Register routes after health checks
@@ -110,7 +129,8 @@ app.use((req, res, next) => {
         // Initialize database seeding after server is ready
         // Run in background to not block server startup
         if (process.env.NODE_ENV !== 'test') {
-          setTimeout(async () => {
+          // Use setImmediate to ensure this doesn't block the event loop
+          setImmediate(async () => {
             try {
               console.log("Starting background database initialization...");
               const adminUser = await seedAdminUser();
@@ -122,7 +142,7 @@ app.use((req, res, next) => {
               console.error("Background database initialization failed:", error);
               // Don't crash the server - log and continue
             }
-          }, 1000); // Wait 1 second after server starts
+          });
         }
       });
     });
