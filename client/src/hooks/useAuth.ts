@@ -14,12 +14,21 @@ export function useAuth() {
   const { data: user, isLoading, error } = useQuery<User | null>({
     queryKey: ["/api/auth/me"],
     queryFn: async () => {
+      const token = localStorage.getItem('authToken');
+      
+      if (!token) {
+        return null;
+      }
+      
       const response = await fetch("/api/auth/me", {
-        credentials: "include",
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
       });
       
       if (!response.ok) {
         if (response.status === 401) {
+          localStorage.removeItem('authToken'); // Clear invalid token
           return null;
         }
         throw new Error("Failed to fetch user");
@@ -35,14 +44,8 @@ export function useAuth() {
   // Logout mutation
   const logoutMutation = useMutation({
     mutationFn: async () => {
-      const response = await fetch("/api/auth/logout", {
-        method: "POST",
-        credentials: "include",
-      });
-      
-      if (!response.ok) {
-        throw new Error("Logout failed");
-      }
+      // Simply remove token from localStorage
+      localStorage.removeItem('authToken');
     },
     onSuccess: () => {
       queryClient.clear(); // Clear all cached data

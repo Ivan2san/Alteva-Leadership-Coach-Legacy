@@ -47,6 +47,10 @@ export default function SignupPage() {
       }
 
       const result = await response.json();
+      
+      // Store token in localStorage
+      localStorage.setItem('authToken', result.token);
+      
       toast({
         title: "Account created successfully",
         description: `Welcome to Leadership Coach, ${result.user.fullName}!`,

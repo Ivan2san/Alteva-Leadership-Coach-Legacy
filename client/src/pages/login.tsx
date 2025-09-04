@@ -43,6 +43,10 @@ export default function LoginPage() {
       }
 
       const result = await response.json();
+      
+      // Store token in localStorage
+      localStorage.setItem('authToken', result.token);
+      
       toast({
         title: "Login successful",
         description: `Welcome back, ${result.user.fullName}!`,

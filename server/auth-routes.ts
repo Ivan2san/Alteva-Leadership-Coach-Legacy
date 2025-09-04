@@ -35,21 +35,15 @@ export function registerAuthRoutes(app: Express) {
       // Generate token
       const token = generateToken(user.id);
 
-      // Set cookie with development-friendly settings
-      console.log("Setting cookie for signup:", { userId: user.id, token: token.slice(0, 20) + "..." });
+      // Return token directly to frontend for localStorage storage
+      console.log("Signup successful for user:", user.email);
       
-      // Set authentication cookie with proper development settings
-      res.cookie('authToken', token, {
-        httpOnly: true, // Secure HTTP-only cookie
-        secure: false, // Allow HTTP in development
-        sameSite: 'lax', // Compatible with secure: false
-        path: '/',
-        maxAge: 24 * 60 * 60 * 1000 // 24 hours
-      });
-
-      // Return user without password
+      // Return user and token
       const { password: _, ...userWithoutPassword } = user;
-      res.status(201).json({ user: userWithoutPassword });
+      res.status(201).json({ 
+        user: userWithoutPassword,
+        token: token 
+      });
     } catch (error) {
       console.error("Signup error:", error);
       res.status(500).json({ error: "Internal server error" });
@@ -78,21 +72,15 @@ export function registerAuthRoutes(app: Express) {
       // Generate token
       const token = generateToken(user.id);
 
-      // Set cookie with development-friendly settings
-      console.log("Setting cookie for login:", { userId: user.id, token: token.slice(0, 20) + "..." });
+      // Return token directly to frontend for localStorage storage
+      console.log("Login successful for user:", user.email);
       
-      // Set authentication cookie with proper development settings
-      res.cookie('authToken', token, {
-        httpOnly: true, // Secure HTTP-only cookie
-        secure: false, // Allow HTTP in development
-        sameSite: 'lax', // Compatible with secure: false
-        path: '/',
-        maxAge: 24 * 60 * 60 * 1000 // 24 hours
-      });
-
-      // Return user without password
+      // Return user and token
       const { password: _, ...userWithoutPassword } = user;
-      res.json({ user: userWithoutPassword });
+      res.json({ 
+        user: userWithoutPassword,
+        token: token 
+      });
     } catch (error) {
       console.error("Login error:", error);
       res.status(500).json({ error: "Internal server error" });
@@ -108,9 +96,9 @@ export function registerAuthRoutes(app: Express) {
   // Get current user endpoint
   app.get("/api/auth/me", async (req, res) => {
     try {
-      console.log("Auth check - cookies received:", req.cookies);
-      const token = req.cookies?.authToken;
-      console.log("Auth check - authToken found:", !!token);
+      // Get token from Authorization header
+      const authHeader = req.headers.authorization;
+      const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null;
       
       if (!token) {
         return res.status(401).json({ error: "Not authenticated" });
@@ -118,14 +106,12 @@ export function registerAuthRoutes(app: Express) {
 
       const { verifyToken } = await import("./auth");
       const decoded = verifyToken(token);
-      console.log("Auth check - token decoded:", !!decoded);
       
       if (!decoded) {
         return res.status(401).json({ error: "Invalid token" });
       }
 
       const user = await storage.getUser(decoded.userId);
-      console.log("Auth check - user found:", !!user);
       
       if (!user) {
         return res.status(401).json({ error: "User not found" });
@@ -133,7 +119,6 @@ export function registerAuthRoutes(app: Express) {
 
       // Return user without password
       const { password: _, ...userWithoutPassword } = user;
-      console.log("Auth check - success for user:", user.email);
       res.json({ user: userWithoutPassword });
     } catch (error) {
       console.error("Get current user error:", error);
