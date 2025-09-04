@@ -114,8 +114,7 @@ export class DatabaseStorage implements IStorage {
       .update(users)
       .set({ 
         lgp360OriginalContent: lgp360Data.originalContent || null,
-        lgp360Assessment: lgp360Data.assessment || null,
-        lgp360ProfessionalReport: lgp360Data.professionalReport,
+        lgp360Assessment: lgp360Data.assessment,
         lgp360UploadedAt: new Date(),
         updatedAt: new Date() 
       })

@@ -312,26 +312,26 @@ ${userLGP360Data ? this.generatePersonalizationContext(userLGP360Data) : ''}`;
   }
 
   private generatePersonalizationContext(lgp360Data: LGP360ReportData): string {
-    if (!lgp360Data.professionalReport && !lgp360Data.assessment) {
+    if (!lgp360Data.assessment) {
       return '';
     }
     
     return `
 ## 👤 USER PERSONALIZATION CONTEXT
 
-**Leadership Profile:**
-${lgp360Data.professionalReport || lgp360Data.assessment || ''}
+**Professional Coaching Assessment:**
+${lgp360Data.assessment}
 
 ${lgp360Data.originalContent ? `\n**Original Document Context:**\n${lgp360Data.originalContent.substring(0, 500)}...` : ''}
 
 **🎯 PERSONALIZATION INSTRUCTIONS:**
-Use this leadership profile information to:
-1. **Tailor coaching questions** to their specific challenges and goals mentioned in the profile
-2. **Reference their leadership style and approaches** identified in the assessment
-3. **Build on their strengths** while addressing development areas noted in the profile
-4. **Connect to their role, industry, and experience level** as described
+Use this professional coaching assessment to:
+1. **Tailor coaching questions** to their specific challenges and goals identified in the assessment
+2. **Reference their leadership style and approaches** analyzed in the professional assessment
+3. **Build on their strengths** while addressing development areas noted in the coaching analysis
+4. **Connect to their role, industry, and experience level** as described in the assessment
 5. **Acknowledge their specific situation** and team dynamics mentioned
-6. **Reference their motivations and preferences** outlined in the assessment
+6. **Reference their motivations and preferences** outlined in the professional assessment
 
 Make coaching personal and relevant to their unique leadership context while maintaining Alteva coaching methodology.
 `;
@@ -373,11 +373,10 @@ Make coaching personal and relevant to their unique leadership context while mai
     );
   }
 
-  /** Analyzes uploaded document and creates comprehensive assessment and professional report */
-  async analyzeDocumentEnhanced(fileBuffer: Buffer, fileName: string, mimeType: string): Promise<{ 
+  /** Analyzes uploaded document and creates professional coaching assessment */
+  async analyzeDocumentProfessional(fileBuffer: Buffer, fileName: string, mimeType: string): Promise<{ 
     originalContent: string; 
     assessment: string; 
-    professionalReport: string; 
   }> {
     try {
       // Convert buffer to text based on file type
@@ -465,56 +464,55 @@ Coaching Background: Some coaching experience
 Preferred Learning: Mentoring, workshops, 360 feedback`;
       }
 
-      // Step 1: Create coaching assessment using Alteva methodology
-      const assessmentPrompt = `You are an expert Alteva leadership coach conducting a comprehensive assessment. 
+      const assessmentPrompt = `You are an expert Alteva leadership coach conducting a comprehensive professional assessment.
 
-Analyze this leadership document through the lens of Alteva's Growth-Edge Leadership methodology, focusing on:
+Analyze this leadership document and create a professional coaching assessment that combines analytical rigor with executive-level presentation:
 
 Document content:
 ${documentText}
 
-Create a comprehensive coaching assessment that identifies:
-- Leadership identity and current growth edge
-- Red Zone (reactive) and Green Zone (values-driven) patterns
-- Core leadership strengths and shadow areas
-- Current challenges and development opportunities
-- Leadership style, communication patterns, and decision-making approach
+Create a comprehensive, professionally formatted coaching assessment that includes:
+
+**EXECUTIVE OVERVIEW**
+- Brief professional summary of the leader's profile and context
+- Key leadership identity and current growth edge
+
+**LEADERSHIP ANALYSIS** 
+- Current role, experience, and organizational context
+- Core leadership strengths and what they do exceptionally well
+- Growth opportunities and development areas using Alteva methodology
+
+**BEHAVIORAL PATTERNS**
+- Red Zone (reactive) and Green Zone (values-driven) leadership patterns
+- Communication style, decision-making approach, and conflict resolution
+- Leadership style insights and natural approaches
+
+**DEVELOPMENT FOCUS**
+- Current challenges and what they're navigating
 - Growth values and alignment with authentic leadership expression
-- Recommended focus areas for transformation
+- Specific coaching recommendations and transformation focus areas
 
-Write this as a thorough coaching assessment using Alteva methodology - analytical, insightful, and development-focused. This is for coach review and development planning.`;
+**COACHING PATHWAY**
+- Priority development areas for maximum impact
+- Recommended practices and learning preferences
+- Success indicators and growth milestones
 
-      // Step 2: Create professional report for the leader
-      const reportPrompt = `You are an expert executive coach delivering personalized feedback to a senior leader.
+Write this as a professional, executive-level coaching assessment that flows naturally and provides both analytical depth and practical insights. Make it suitable for both coach planning and leader review - comprehensive, encouraging, and actionable.`;
 
-Based on this leadership assessment:
-${documentText}
-
-Create a warm, professional narrative that reads like a personal coaching conversation. Include:
-- Warm acknowledgment of their leadership journey and experience
-- Recognition of their core strengths and what they do exceptionally well
-- Insights into their leadership style and natural approaches
-- Understanding of their current challenges and what they're navigating
-- Their aspirations and what success looks like for them
-- Encouraging observations about their growth potential
-- Specific recommendations for their leadership development
-
-Write this as a flowing, conversational narrative - like what you'd share in a one-on-one coaching session. Make it encouraging, insightful, and personally relevant to their unique leadership context.`;
-
-      console.log("Enhanced document analysis request:", {
+      console.log("Professional document analysis request:", {
         fileType: mimeType,
         documentLength: documentText.length,
         fileName
       });
 
-      // Generate coaching assessment
+      // Generate single professional coaching assessment
       const assessmentResponse = await openai.chat.completions.create({
         model: "gpt-4o",
         messages: [
-          { role: "system", content: "You are an expert Alteva leadership coach specializing in Growth-Edge Leadership methodology. Create thorough, analytical assessments for coach development planning." },
+          { role: "system", content: "You are an expert Alteva leadership coach creating professional, executive-level coaching assessments. Combine analytical depth with professional presentation suitable for both coach planning and leader review." },
           { role: "user", content: assessmentPrompt }
         ],
-        max_completion_tokens: 2000,
+        max_completion_tokens: 2500,
       });
 
       const assessment = assessmentResponse.choices?.[0]?.message?.content?.trim();
@@ -523,31 +521,13 @@ Write this as a flowing, conversational narrative - like what you'd share in a o
         throw new Error("Empty assessment response from AI");
       }
 
-      // Generate professional report for the leader
-      const reportResponse = await openai.chat.completions.create({
-        model: "gpt-4o",
-        messages: [
-          { role: "system", content: "You are an expert executive coach delivering personalized, encouraging feedback to senior leaders. Create warm, conversational narratives that inspire growth." },
-          { role: "user", content: reportPrompt }
-        ],
-        max_completion_tokens: 2000,
-      });
-
-      const professionalReport = reportResponse.choices?.[0]?.message?.content?.trim();
-      
-      if (!professionalReport) {
-        throw new Error("Empty professional report response from AI");
-      }
-
-      console.log("Enhanced analysis completed:", {
-        assessmentLength: assessment.length,
-        reportLength: professionalReport.length
+      console.log("Professional assessment completed:", {
+        assessmentLength: assessment.length
       });
 
       return {
         originalContent: documentText,
-        assessment,
-        professionalReport
+        assessment
       };
       
     } catch (error) {

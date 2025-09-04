@@ -69,11 +69,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const decoded = verifyToken(token);
           if (decoded) {
             const user = await storage.getUser(decoded.userId);
-            if (user?.lgp360ProfessionalReport) {
+            if (user?.lgp360Assessment) {
               userLGP360Data = { 
-                professionalReport: user.lgp360ProfessionalReport,
-                originalContent: user.lgp360OriginalContent || undefined,
-                assessment: user.lgp360Assessment || undefined
+                assessment: user.lgp360Assessment,
+                originalContent: user.lgp360OriginalContent || undefined
               };
             }
           }
@@ -539,8 +538,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "No document uploaded" });
       }
 
-      // Process document with enhanced AI analysis (user is available from middleware)
-      const analysisResult = await openaiService.analyzeDocumentEnhanced(req.file.buffer, req.file.originalname, req.file.mimetype);
+      // Process document with professional AI analysis (user is available from middleware)
+      const analysisResult = await openaiService.analyzeDocumentProfessional(req.file.buffer, req.file.originalname, req.file.mimetype);
       
       res.json(analysisResult);
     } catch (error) {

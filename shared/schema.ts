@@ -11,8 +11,7 @@ export const users = pgTable("users", {
   role: text("role").notNull().default('user'), // 'user' | 'admin'
   // LGP360 Report Fields
   lgp360OriginalContent: text("lgp360_original_content"), // Raw uploaded document content
-  lgp360Assessment: text("lgp360_assessment"), // AI coaching assessment
-  lgp360ProfessionalReport: text("lgp360_professional_report"), // Final professional report
+  lgp360Assessment: text("lgp360_assessment"), // Professional coaching assessment
   lgp360UploadedAt: timestamp("lgp360_uploaded_at"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -86,11 +85,10 @@ export const loginSchema = z.object({
   password: z.string().min(1, "Password is required"),
 });
 
-// LGP360 Report Schema (enhanced with original content and assessment)
+// LGP360 Report Schema (professional coaching assessment)
 export const lgp360ReportSchema = z.object({
   originalContent: z.string().optional(),
-  assessment: z.string().optional(), 
-  professionalReport: z.string().min(1, "Professional leadership report is required"),
+  assessment: z.string().min(1, "Professional coaching assessment is required"),
 });
 
 export const insertConversationSchema = createInsertSchema(conversations).omit({
