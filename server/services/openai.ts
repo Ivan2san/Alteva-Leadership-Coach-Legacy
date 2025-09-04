@@ -17,6 +17,18 @@ export interface ChatResponse {
   error?: string;
 }
 
+export interface FileProcessingStatus {
+  id: string;
+  status: 'uploading' | 'processing' | 'completed' | 'failed';
+  error?: string;
+}
+
+export interface KnowledgeSearchResult {
+  content: string;
+  source: string;
+  relevance: number;
+}
+
 type HistoryItem = { sender: "user" | "assistant"; text: string };
 
 export class OpenAIService {
@@ -38,14 +50,92 @@ export class OpenAIService {
   /** Creates a vector store (Assistants v2). */
   async createVectorStore(name = "leadership_knowledge_base") {
     try {
-      // SDK path is beta.vectorStores
       const vectorStore = await (openai as any).beta.vectorStores.create({
         name,
       });
+      console.log("Created vector store:", vectorStore.id);
       return vectorStore;
     } catch (error) {
       console.error("Error creating vector store:", error);
       throw error;
+    }
+  }
+
+  /** Uploads a file to the vector store */
+  async uploadFileToVectorStore(fileBuffer: Buffer, fileName: string, mimeType: string): Promise<string> {
+    try {
+      if (!this.vectorStoreId) {
+        throw new Error("Vector store not configured. Please set OPENAI_VECTOR_STORE_ID.");
+      }
+
+      // Upload file to OpenAI
+      const file = await openai.files.create({
+        file: new File([fileBuffer], fileName, { type: mimeType }),
+        purpose: "assistants",
+      });
+
+      // Add file to vector store
+      await (openai as any).beta.vectorStores.files.create(this.vectorStoreId, {
+        file_id: file.id,
+      });
+
+      console.log(`File ${fileName} uploaded to vector store with ID: ${file.id}`);
+      return file.id;
+    } catch (error) {
+      console.error("Error uploading file to vector store:", error);
+      throw error;
+    }
+  }
+
+  /** Checks the processing status of a file in the vector store */
+  async getFileProcessingStatus(fileId: string): Promise<FileProcessingStatus> {
+    try {
+      if (!this.vectorStoreId) {
+        throw new Error("Vector store not configured");
+      }
+
+      const file = await (openai as any).beta.vectorStores.files.retrieve(
+        this.vectorStoreId,
+        fileId
+      );
+
+      let status: FileProcessingStatus['status'] = 'processing';
+      if (file.status === 'completed') {
+        status = 'completed';
+      } else if (file.status === 'failed') {
+        status = 'failed';
+      }
+
+      return {
+        id: fileId,
+        status,
+        error: file.last_error?.message,
+      };
+    } catch (error) {
+      console.error("Error checking file status:", error);
+      return {
+        id: fileId,
+        status: 'failed',
+        error: error instanceof Error ? error.message : 'Unknown error',
+      };
+    }
+  }
+
+  /** Searches the knowledge base for relevant content */
+  async searchKnowledgeBase(query: string, maxResults = 5): Promise<KnowledgeSearchResult[]> {
+    try {
+      if (!this.vectorStoreId) {
+        console.warn("Vector store not configured, skipping knowledge base search");
+        return [];
+      }
+
+      // For now, return empty results until we can properly implement the search
+      // TODO: Implement proper vector store search once OpenAI API types are resolved
+      console.log(`Knowledge base search requested for: ${query}`);
+      return [];
+    } catch (error) {
+      console.error("Error searching knowledge base:", error);
+      return [];
     }
   }
 

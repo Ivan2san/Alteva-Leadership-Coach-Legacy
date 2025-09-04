@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
-import { Menu, Users } from "lucide-react";
+import { Menu, Users, Database } from "lucide-react";
+import { Link } from "wouter";
 
 interface HeaderProps {
   onMenuClick?: () => void;
@@ -14,16 +15,29 @@ export default function Header({ onMenuClick }: HeaderProps) {
             <div className="w-8 h-8 bg-primary rounded-md flex items-center justify-center">
               <Users className="text-primary-foreground text-sm" size={16} />
             </div>
-            <h1 className="text-lg font-semibold text-foreground">Leadership Coach</h1>
+            <Link href="/">
+              <h1 className="text-lg font-semibold text-foreground hover:text-primary cursor-pointer">Leadership Coach</h1>
+            </Link>
           </div>
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={onMenuClick}
-            data-testid="button-menu"
-          >
-            <Menu className="text-muted-foreground" size={16} />
-          </Button>
+          <div className="flex items-center space-x-2">
+            <Link href="/knowledge-base">
+              <Button 
+                variant="ghost" 
+                size="sm"
+                data-testid="knowledge-base-link"
+              >
+                <Database className="text-muted-foreground" size={16} />
+              </Button>
+            </Link>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={onMenuClick}
+              data-testid="button-menu"
+            >
+              <Menu className="text-muted-foreground" size={16} />
+            </Button>
+          </div>
         </div>
       </div>
     </header>
