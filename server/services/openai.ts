@@ -289,7 +289,7 @@ ${userLGP360Data ? this.generatePersonalizationContext(userLGP360Data) : ''}`;
       ];
 
       const response = await openai.chat.completions.create({
-        model: "gpt-4",
+        model: "gpt-5", // the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
         messages,
         max_completion_tokens: 1000,
       });
@@ -441,7 +441,7 @@ Please extract and structure the information into the following JSON format. If 
 Return ONLY the JSON object, no other text.`;
 
       const response = await openai.chat.completions.create({
-        model: "gpt-4",
+        model: "gpt-5", // the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
         messages: [
           { role: "system", content: "You are an expert at analyzing leadership documents and extracting structured data. Always respond with valid JSON only." },
           { role: "user", content: analysisPrompt }
