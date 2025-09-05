@@ -54,7 +54,7 @@ export default function ActionButton({ topic, onClick }: ActionButtonProps) {
       aria-label={config.title}
       className={[
         // container
-        "group relative w-full min-h-[168px] h-auto rounded-2xl p-5 text-left",
+        "group relative w-full min-h-[140px] sm:min-h-[168px] h-auto rounded-2xl p-4 sm:p-5 text-left",
         // solid card surface with decent contrast
         "bg-white/95 dark:bg-slate-900/95",
         // clearer border and subtle elevation
@@ -65,10 +65,10 @@ export default function ActionButton({ topic, onClick }: ActionButtonProps) {
         "focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none",
       ].join(" ")}
     >
-      <div className="w-full flex flex-col items-start space-y-4">
+      <div className="w-full flex flex-col items-start space-y-3 sm:space-y-4">
         {/* Icon */}
         <div
-          className="w-12 h-12 rounded-xl flex items-center justify-center
+          className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center
                      bg-gradient-to-br from-primary/15 to-primary/10
                      group-hover:from-primary/25 group-hover:to-primary/15
                      transition-all duration-300"
@@ -77,11 +77,12 @@ export default function ActionButton({ topic, onClick }: ActionButtonProps) {
         </div>
 
         {/* Text block */}
-        <div className="flex flex-col items-start space-y-2 w-full">
+        <div className="flex flex-col items-start space-y-1.5 sm:space-y-2 w-full">
           <h3
-            className="font-semibold text-base leading-tight tracking-wide
+            className="font-semibold text-sm sm:text-base leading-tight tracking-wide
                        text-slate-900 dark:text-slate-100
-                       group-hover:text-primary transition-colors duration-200"
+                       group-hover:text-primary transition-colors duration-200
+                       break-words hyphens-auto"
           >
             {config.title}
           </h3>

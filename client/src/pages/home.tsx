@@ -23,7 +23,7 @@ export default function Home() {
             <p className="text-muted-foreground text-sm leading-relaxed max-w-sm mx-auto">Choose an area to focus on for your professional growth and development</p>
           </div>
 
-          <div className="grid grid-cols-2 gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
             {topics.map((topic) => (
               <ActionButton
                 key={topic}
