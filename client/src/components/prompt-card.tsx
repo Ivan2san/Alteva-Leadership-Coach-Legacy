@@ -15,7 +15,7 @@ export default function PromptCard({ prompt, index, onClick }: PromptCardProps) 
       <TooltipTrigger asChild>
         <Button
           variant="outline"
-          className="w-full bg-card hover:bg-accent/5 border border-border rounded-lg p-4 text-left transition-all duration-200 button-hover group min-h-[100px] h-auto"
+          className="w-full bg-card hover:bg-accent/5 border border-border rounded-lg p-4 text-left transition-all duration-200 button-hover group min-h-[120px] h-auto"
           onClick={() => onClick(prompt.text)}
           data-testid={`button-prompt-${index}`}
         >
@@ -24,11 +24,11 @@ export default function PromptCard({ prompt, index, onClick }: PromptCardProps) 
               <MessageCircle className="text-primary text-xs" size={12} />
             </div>
             <div className="flex-1 min-w-0">
-              <div className="flex items-center justify-between mb-1">
+              <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-medium text-accent truncate">{prompt.category}</span>
                 <ArrowRight className="text-muted-foreground group-hover:text-foreground transition-colors text-xs flex-shrink-0" size={12} />
               </div>
-              <p className="text-xs text-foreground leading-normal text-left line-clamp-3">
+              <p className="text-sm text-foreground leading-relaxed text-left line-clamp-4">
                 {prompt.text}
               </p>
             </div>
