@@ -126,15 +126,57 @@ export class OpenAIService {
   /** Searches the knowledge base for relevant content */
   async searchKnowledgeBase(query: string, maxResults = 5): Promise<KnowledgeSearchResult[]> {
     try {
-      if (!this.vectorStoreId) {
-        console.warn("Vector store not configured, skipping knowledge base search");
+      // Import storage here to avoid circular dependency
+      const { storage } = await import("../storage");
+      
+      // Get all processed knowledge base files
+      const files = await storage.getKnowledgeBaseFiles();
+      const processedFiles = files.filter(file => file.isProcessed && file.extractedText);
+      
+      if (processedFiles.length === 0) {
+        console.log("No processed knowledge base files available for search");
         return [];
       }
-
-      // For now, return empty results until we can properly implement the search
-      // TODO: Implement proper vector store search once OpenAI API types are resolved
-      console.log(`Knowledge base search requested for: ${query}`);
-      return [];
+      
+      // Simple text-based search (in production, you'd use more sophisticated search)
+      const searchResults: KnowledgeSearchResult[] = [];
+      const queryLower = query.toLowerCase();
+      
+      for (const file of processedFiles) {
+        if (file.extractedText) {
+          const content = file.extractedText.toLowerCase();
+          
+          // Calculate relevance based on query term frequency
+          const queryTerms = queryLower.split(/\s+/);
+          let relevance = 0;
+          
+          for (const term of queryTerms) {
+            const matches = (content.match(new RegExp(term, 'g')) || []).length;
+            relevance += matches;
+          }
+          
+          if (relevance > 0) {
+            // Extract a relevant snippet around the first match
+            const firstMatchIndex = content.indexOf(queryTerms[0]);
+            const snippetStart = Math.max(0, firstMatchIndex - 100);
+            const snippetEnd = Math.min(file.extractedText.length, firstMatchIndex + 200);
+            const snippet = file.extractedText.substring(snippetStart, snippetEnd);
+            
+            searchResults.push({
+              content: snippet,
+              source: file.originalName,
+              relevance: relevance / queryTerms.length // Normalize by number of terms
+            });
+          }
+        }
+      }
+      
+      // Sort by relevance and return top results
+      searchResults.sort((a, b) => b.relevance - a.relevance);
+      const results = searchResults.slice(0, maxResults);
+      
+      console.log(`Knowledge base search for "${query}" returned ${results.length} results`);
+      return results;
     } catch (error) {
       console.error("Error searching knowledge base:", error);
       return [];
@@ -276,6 +318,18 @@ Current focus area: ${topic}
 
 ${userLGP360Data ? this.generatePersonalizationContext(userLGP360Data) : ''}`;
 
+      // Search knowledge base for relevant context
+      const knowledgeResults = await this.searchKnowledgeBase(userPrompt);
+      let contextAddition = '';
+      
+      if (knowledgeResults.length > 0) {
+        contextAddition = '\n\n## 📚 Relevant Knowledge Base Information\n\n';
+        knowledgeResults.forEach((result, index) => {
+          contextAddition += `**Source: ${result.source}**\n${result.content}\n\n`;
+        });
+        contextAddition += '---\n\nUse this information to enhance your coaching response when relevant.\n';
+      }
+
       const history: ChatCompletionMessageParam[] = conversationHistory.map(
         (msg) => ({
           role: msg.sender === "user" ? "user" : "assistant",
@@ -284,7 +338,7 @@ ${userLGP360Data ? this.generatePersonalizationContext(userLGP360Data) : ''}`;
       );
 
       const messages: ChatCompletionMessageParam[] = [
-        { role: "system", content: systemPrompt },
+        { role: "system", content: systemPrompt + contextAddition },
         ...history,
         { role: "user", content: userPrompt },
       ];

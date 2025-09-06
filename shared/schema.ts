@@ -42,8 +42,10 @@ export const knowledgeBaseFiles = pgTable("knowledge_base_files", {
   tags: text("tags").array().default([]),
   description: text("description"),
   isProcessed: boolean("is_processed").default(false),
+  extractedText: text("extracted_text"), // Extracted text content for search
   vectorStoreFileId: text("vector_store_file_id"),
   processingError: text("processing_error"),
+  processedAt: timestamp("processed_at"), // When file was successfully processed
   uploadedBy: varchar("uploaded_by"), // future user reference
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
