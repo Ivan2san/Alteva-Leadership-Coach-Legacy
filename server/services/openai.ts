@@ -186,6 +186,100 @@ export class OpenAIService {
     }
   }
 
+  /** Generates streaming response for real-time chat experience */
+  async getStreamingLeadershipResponse(
+    userPrompt: string,
+    topic: string,
+    conversationHistory: HistoryItem[] = [],
+    userLGP360Data?: LGP360ReportData
+  ) {
+    try {
+      const systemPrompt = `You are a senior leadership coach specializing in the Alteva Growth methodology. You help leaders develop their growth edge through authentic, values-driven leadership development.
+
+Core Alteva Principles:
+- **Red Zone:** Reactive, fear-based leadership patterns that diminish effectiveness
+- **Green Zone:** Values-driven, connected leadership that creates authentic influence
+- **Growth Edge:** The specific developmental challenge that, when faced, creates exponential leadership growth
+- **One Big Practice (OBP):** The single most impactful daily practice for leadership transformation
+
+Your role:
+- Ask powerful questions that reveal patterns and insights
+- Guide discovery of their growth edge and One Big Practice
+- Help them recognize Red/Green Zone patterns in real situations
+- Support authentic leadership development aligned with their core values
+- Provide practical tools and frameworks for immediate application
+
+Communication style:
+- Direct, caring, and professionally supportive
+- Use Markdown formatting for clarity and engagement
+- Ask 1-2 powerful questions per response
+- Offer specific, actionable insights
+- Balance challenge with encouragement
+
+Formatting guidelines:
+- Use **bold** for key concepts and important points
+- Use *italic* for emphasis and reflection prompts
+- Use bullet points for lists and action items
+- Use numbered lists for sequential steps or processes
+- Break content into logical sections with clear spacing
+- Use > blockquotes for powerful questions or insights
+- Keep paragraphs concise (2-3 sentences max)
+
+Example structure:
+## Core Insight
+Brief reflection on what you're sensing...
+
+**Key Point:** Main coaching insight
+
+### Questions for Reflection:
+- What resonates with you about this?
+- Where do you notice resistance?
+
+### Next Steps:
+1. Immediate action
+2. Ongoing practice
+
+Current focus area: ${topic}
+
+${userLGP360Data ? this.generatePersonalizationContext(userLGP360Data) : ''}`;
+
+      // Search knowledge base for relevant context
+      const knowledgeResults = await this.searchKnowledgeBase(userPrompt);
+      let contextAddition = '';
+      
+      if (knowledgeResults.length > 0) {
+        contextAddition = '\n\n## 📚 Relevant Knowledge Base Information\n\n';
+        knowledgeResults.forEach((result, index) => {
+          contextAddition += `**Source: ${result.source}**\n${result.content}\n\n`;
+        });
+        contextAddition += '---\n\nUse this information to enhance your coaching response when relevant.\n';
+      }
+
+      // Transform conversation history to single input string format
+      let conversationText = '';
+      for (const msg of conversationHistory) {
+        const role = msg.sender === "user" ? "User" : "Assistant";
+        conversationText += `${role}: ${msg.text}\n\n`;
+      }
+
+      // Create single input string for Responses API
+      const input = `${systemPrompt}${contextAddition}\n\n${conversationText}User: ${userPrompt}`;
+
+      console.log(`Streaming chat prompt length: ${input.length} characters`);
+
+      // Use Responses API streaming per official docs
+      // Reference: https://platform.openai.com/docs/api-reference/responses-streaming
+      return await openai.responses.stream({
+        model: process.env.OPENAI_MODEL || "gpt-5",
+        input,
+      });
+
+    } catch (error) {
+      console.error("Error getting streaming AI response:", error);
+      throw error;
+    }
+  }
+
   async getLeadershipResponse(
     userPrompt: string,
     topic: string,

@@ -76,7 +76,86 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Register authentication routes
   registerAuthRoutes(app);
   
-  // Chat endpoint
+  // Streaming chat endpoint for real-time responses
+  // Reference: https://platform.openai.com/docs/api-reference/responses-streaming
+  app.post("/api/chat/stream", async (req, res) => {
+    try {
+      const { message, topic, conversationHistory } = req.body;
+
+      if (!message || !topic) {
+        return res.status(400).json({ error: "Message and topic are required" });
+      }
+
+      // Validate conversation history if provided
+      if (conversationHistory) {
+        const historySchema = z.array(messageSchema);
+        const validationResult = historySchema.safeParse(conversationHistory);
+        if (!validationResult.success) {
+          return res.status(400).json({ error: "Invalid conversation history format" });
+        }
+      }
+
+      // Get user LGP360 data for personalization
+      let userLGP360Data;
+      try {
+        const authResult = await authenticateUser(req);
+        if (authResult.success && authResult.user) {
+          if (authResult.user.lgp360Assessment) {
+            userLGP360Data = {
+              assessment: authResult.user.lgp360Assessment,
+              originalContent: authResult.user.lgp360OriginalContent
+            };
+          }
+        }
+      } catch (authError) {
+        console.log("No authenticated user for personalization");
+      }
+
+      // Set up server-sent events headers
+      res.setHeader("Content-Type", "text/event-stream");
+      res.setHeader("Cache-Control", "no-cache");
+      res.setHeader("Connection", "keep-alive");
+      res.setHeader("Access-Control-Allow-Origin", "*");
+      res.setHeader("Access-Control-Allow-Headers", "Cache-Control");
+      res.flushHeaders();
+
+      // Get streaming response from OpenAI
+      const stream = await openaiService.getStreamingLeadershipResponse(
+        message,
+        topic,
+        conversationHistory || [],
+        userLGP360Data
+      );
+
+      // Process streaming events as per official docs
+      // Reference: https://platform.openai.com/docs/api-reference/responses-streaming
+      for await (const event of stream) {
+        // Forward token/text chunks; shape per streaming docs
+        if (event.type === "response.output_text.delta") {
+          res.write(`data: ${JSON.stringify({ delta: event.delta })}\n\n`);
+        }
+        if (event.type === "response.completed") {
+          res.write(`data: ${JSON.stringify({ completed: true })}\n\n`);
+          break;
+        }
+        // Log unknown events in development as per mitigation strategy
+        if (process.env.NODE_ENV === "development" && !["response.output_text.delta", "response.completed"].includes(event.type)) {
+          console.log("Unknown streaming event type:", event.type);
+        }
+      }
+      
+      res.write("data: [DONE]\n\n");
+      res.end();
+
+    } catch (error) {
+      console.error("Error in streaming chat:", error);
+      res.write(`data: ${JSON.stringify({ error: "Sorry, I'm having a hiccup processing that. Try again in a moment." })}\n\n`);
+      res.write("data: [DONE]\n\n");
+      res.end();
+    }
+  });
+
+  // Non-streaming chat endpoint (fallback)
   app.post("/api/chat", async (req, res) => {
     try {
       const { message, topic, conversationHistory } = req.body;
