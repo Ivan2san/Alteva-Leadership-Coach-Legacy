@@ -206,17 +206,18 @@ export default function ConversationsPage() {
           {/* Search and Filters */}
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <span className="flex items-center gap-2">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <CardTitle className="flex items-center gap-2 mb-0">
                   <MessageSquare className="h-5 w-5" />
                   Conversations ({filteredConversations.length})
-                </span>
+                </CardTitle>
                 <Link href="/prompts/growth-profile">
-                  <Button data-testid="new-conversation-button">
-                    Start New Conversation
+                  <Button data-testid="new-conversation-button" className="w-full sm:w-auto">
+                    <span className="sm:hidden">New Chat</span>
+                    <span className="hidden sm:inline">Start New Conversation</span>
                   </Button>
                 </Link>
-              </CardTitle>
+              </div>
               <CardDescription>
                 Your coaching conversation history and analytics
               </CardDescription>
