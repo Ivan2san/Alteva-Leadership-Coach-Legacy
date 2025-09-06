@@ -127,7 +127,7 @@ export default function ConversationsPage() {
 
   const getTopicConfig = (topic: string) => {
     const config = topicConfigurations[topic];
-    if (!config) return { title: topic, icon: MessageCircle, color: "blue", bgColor: "bg-blue-50", borderColor: "border-blue-200" };
+    if (!config) return { title: topic, icon: MessageCircle, color: "blue", bgColor: "bg-blue-50", borderColor: "border-blue-200", textColor: "text-blue-700" };
     
     const iconMap: Record<string, any> = {
       'fa-user-chart': User,
