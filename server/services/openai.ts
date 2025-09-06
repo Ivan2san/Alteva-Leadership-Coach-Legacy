@@ -333,41 +333,41 @@ ${userLGP360Data ? this.generatePersonalizationContext(userLGP360Data) : ''}`;
         contextAddition += '---\n\nUse this information to enhance your coaching response when relevant.\n';
       }
 
-      const history: ChatCompletionMessageParam[] = conversationHistory.map(
-        (msg) => ({
-          role: msg.sender === "user" ? "user" : "assistant",
-          content: msg.text,
-        })
-      );
+      // Transform conversation history to single input string format
+      // Following Responses API pattern from https://platform.openai.com/docs/api-reference/responses/create
+      let conversationText = '';
+      for (const msg of conversationHistory) {
+        const role = msg.sender === "user" ? "User" : "Assistant";
+        conversationText += `${role}: ${msg.text}\n\n`;
+      }
 
-      const messages: ChatCompletionMessageParam[] = [
-        { role: "system", content: systemPrompt + contextAddition },
-        ...history,
-        { role: "user", content: userPrompt },
-      ];
+      // Create single input string for Responses API
+      const input = `${systemPrompt}${contextAddition}\n\n${conversationText}User: ${userPrompt}`;
 
       // Calculate total prompt length for debugging
-      const totalPromptLength = messages.reduce((total, msg) => total + (msg.content?.length || 0), 0);
+      const totalPromptLength = input.length;
       console.log(`Chat prompt length: ${totalPromptLength} characters`);
 
-      const response = await openai.chat.completions.create({
-        model: "gpt-4o", // Using gpt-4o for consistency with document analysis
-        messages,
-        max_completion_tokens: 1000,
+      // Use Responses API instead of chat.completions
+      // Reference: https://platform.openai.com/docs/api-reference/responses/create
+      const response = await openai.responses.create({
+        model: process.env.OPENAI_MODEL || "gpt-5",
+        input,
       });
 
-      const aiMessage = response.choices?.[0]?.message?.content?.trim();
+      // Process response using new API shape as per template guidance
+      const aiMessage = response.output_text ?? response.output?.[0]?.content?.[0]?.text ?? "";
       
-      if (!aiMessage) {
-        console.error("Empty response from OpenAI. Response details:", {
-          choices: response.choices?.length || 0,
-          finishReason: response.choices?.[0]?.finish_reason,
+      if (!aiMessage || aiMessage.trim() === '') {
+        console.error("Empty response from OpenAI Responses API. Response details:", {
+          hasOutputText: !!response.output_text,
+          hasOutput: !!response.output,
           totalPromptLength
         });
         throw new Error(`Empty completion from model. Prompt length: ${totalPromptLength}`);
       }
 
-      return { message: aiMessage };
+      return { message: aiMessage.trim() };
     } catch (error) {
       console.error("Error getting AI response:", error);
       return {
@@ -609,20 +609,22 @@ Write this as a professional, executive-level coaching assessment that flows nat
         fileName
       });
 
-      // Generate single professional coaching assessment
-      const assessmentResponse = await openai.chat.completions.create({
-        model: "gpt-4o",
-        messages: [
-          { role: "system", content: "You are an expert Alteva leadership coach creating professional, executive-level coaching assessments. Combine analytical depth with professional presentation suitable for both coach planning and leader review." },
-          { role: "user", content: assessmentPrompt }
-        ],
-        max_completion_tokens: 2500,
+      // Create single input for document analysis using Responses API
+      // Reference: https://platform.openai.com/docs/api-reference/responses/create
+      const systemInstruction = "You are an expert Alteva leadership coach creating professional, executive-level coaching assessments. Combine analytical depth with professional presentation suitable for both coach planning and leader review.";
+      const input = `${systemInstruction}\n\n${assessmentPrompt}`;
+
+      // Generate single professional coaching assessment using Responses API
+      const assessmentResponse = await openai.responses.create({
+        model: process.env.OPENAI_MODEL || "gpt-5",
+        input,
       });
 
-      const assessment = assessmentResponse.choices?.[0]?.message?.content?.trim();
+      // Process response using new API shape as per template guidance
+      const assessment = assessmentResponse.output_text ?? assessmentResponse.output?.[0]?.content?.[0]?.text ?? "";
       
-      if (!assessment) {
-        throw new Error("Empty assessment response from AI");
+      if (!assessment || assessment.trim() === '') {
+        throw new Error("Empty assessment response from Responses API");
       }
 
       console.log("Professional assessment completed:", {
@@ -631,7 +633,7 @@ Write this as a professional, executive-level coaching assessment that flows nat
 
       return {
         originalContent: documentText,
-        assessment
+        assessment: assessment.trim()
       };
       
     } catch (error) {
