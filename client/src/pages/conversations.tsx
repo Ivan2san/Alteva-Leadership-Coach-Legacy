@@ -41,6 +41,7 @@ import type { Conversation } from "@shared/schema";
 export default function ConversationsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("active");
+  const [selectedTopic, setSelectedTopic] = useState<string>("");
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -170,13 +171,17 @@ export default function ConversationsPage() {
     }
   };
 
-  // Filter conversations based on search
-  const filteredConversations = conversations.filter(conv => 
-    !searchQuery || 
-    conv.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    conv.summary?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    conv.topic.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Filter conversations based on search and topic
+  const filteredConversations = conversations.filter(conv => {
+    const matchesSearch = !searchQuery || 
+      conv.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      conv.summary?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      conv.topic.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    const matchesTopic = !selectedTopic || conv.topic === selectedTopic;
+    
+    return matchesSearch && matchesTopic;
+  });
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-6xl">
@@ -217,17 +222,64 @@ export default function ConversationsPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="flex gap-4 mb-6">
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <Input
-                    placeholder="Search conversations by title, topic, or content..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10"
-                    data-testid="search-conversations"
-                  />
+              <div className="space-y-4 mb-6">
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <Input
+                      placeholder="Search conversations by title, topic, or content..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="pl-10"
+                      data-testid="search-conversations"
+                    />
+                  </div>
+                  <select
+                    value={selectedTopic}
+                    onChange={(e) => setSelectedTopic(e.target.value)}
+                    className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 dark:border-gray-600"
+                    data-testid="topic-filter"
+                  >
+                    <option value="">All Topics</option>
+                    {Object.entries(topicConfigurations).map(([key, config]) => (
+                      <option key={key} value={key}>{config.title}</option>
+                    ))}
+                  </select>
                 </div>
+                
+                {(searchQuery || selectedTopic) && (
+                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <span>Filters active:</span>
+                    {searchQuery && (
+                      <Badge variant="secondary" className="gap-1">
+                        Search: "{searchQuery}"
+                        <button 
+                          onClick={() => setSearchQuery("")}
+                          className="ml-1 hover:bg-gray-300 rounded-full w-4 h-4 flex items-center justify-center text-xs"
+                        >
+                          ×
+                        </button>
+                      </Badge>
+                    )}
+                    {selectedTopic && (
+                      <Badge variant="secondary" className="gap-1">
+                        Topic: {topicConfigurations[selectedTopic]?.title}
+                        <button 
+                          onClick={() => setSelectedTopic("")}
+                          className="ml-1 hover:bg-gray-300 rounded-full w-4 h-4 flex items-center justify-center text-xs"
+                        >
+                          ×
+                        </button>
+                      </Badge>
+                    )}
+                    <button 
+                      onClick={() => { setSearchQuery(""); setSelectedTopic(""); }}
+                      className="text-blue-600 hover:text-blue-800 font-medium"
+                    >
+                      Clear all
+                    </button>
+                  </div>
+                )}
               </div>
 
               {/* Conversations Grid */}
