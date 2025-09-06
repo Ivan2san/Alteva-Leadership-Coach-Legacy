@@ -23,6 +23,11 @@ export async function apiRequest(
     headers["Authorization"] = `Bearer ${token}`;
   }
   
+  // Bypass MSW for chat in development (use real API)
+  if (import.meta.env.DEV && url.includes('/api/chat')) {
+    headers["x-msw-bypass"] = "true";
+  }
+  
   const res = await fetch(url, {
     method,
     headers,

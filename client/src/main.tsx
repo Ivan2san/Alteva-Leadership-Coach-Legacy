@@ -2,22 +2,24 @@ import { createRoot } from "react-dom/client";
 import App from "./App";
 import "./index.css";
 
-// Enable MSW in development with error handling
-if (import.meta.env.DEV) {
+// Enable MSW in development with smart configuration
+if (import.meta.env.DEV && import.meta.env.VITE_DISABLE_MSW !== "true") {
+  const mockChat = import.meta.env.VITE_MOCK_CHAT === "true";
+  console.log(`🔧 MSW Config: Chat mocking ${mockChat ? 'enabled' : 'disabled'}`);
+  
   import("./mocks/browser")
     .then(({ worker }) => {
-      return worker.start({ 
+      const swUrl = `${import.meta.env.BASE_URL || "/"}mockServiceWorker.js`;
+      return worker.start({
         onUnhandledRequest: "bypass",
-        serviceWorker: {
-          url: "/mockServiceWorker.js"
-        }
+        serviceWorker: { url: swUrl }
       });
     })
     .then(() => {
-      console.log("MSW service worker started successfully");
+      console.log("✅ MSW service worker started successfully");
     })
     .catch((error) => {
-      console.warn("MSW service worker failed to start:", error);
+      console.warn("⚠️ MSW service worker failed to start:", error);
       // Continue without MSW - app should still work
     });
 }
