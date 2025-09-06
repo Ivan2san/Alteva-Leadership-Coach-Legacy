@@ -51,7 +51,8 @@ export class OpenAIService {
   /** Creates a vector store (Assistants v2). */
   async createVectorStore(name = "leadership_knowledge_base") {
     try {
-      const vectorStore = await (openai as any).beta.vectorStores.create({
+      // Use type assertion for beta API that may not be fully typed
+      const vectorStore = await (openai.beta as any).vectorStores.create({
         name,
       });
       console.log("Created vector store:", vectorStore.id);
@@ -76,7 +77,7 @@ export class OpenAIService {
       });
 
       // Add file to vector store
-      await (openai as any).beta.vectorStores.files.create(this.vectorStoreId, {
+      await (openai.beta as any).vectorStores.files.create(this.vectorStoreId, {
         file_id: file.id,
       });
 
@@ -95,7 +96,7 @@ export class OpenAIService {
         throw new Error("Vector store not configured");
       }
 
-      const file = await (openai as any).beta.vectorStores.files.retrieve(
+      const file = await (openai.beta as any).vectorStores.files.retrieve(
         this.vectorStoreId,
         fileId
       );
