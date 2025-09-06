@@ -1,6 +1,7 @@
 // openai.ts
+// Using OpenAI Responses API exclusively per compliance requirements
+// Reference: https://platform.openai.com/docs/api-reference/responses/create
 import OpenAI from "openai";
-import type { ChatCompletionMessageParam } from "openai/resources/chat/completions";
 import type { LGP360ReportData } from "@shared/schema";
 
 const apiKey =
@@ -11,6 +12,8 @@ if (!apiKey) {
   throw new Error("OPENAI_API_KEY is not set. Add it to your env.");
 }
 
+// Initialize OpenAI client as per official SDK docs
+// Reference: https://github.com/openai/openai-node
 const openai = new OpenAI({ apiKey });
 
 export interface ChatResponse {
