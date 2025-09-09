@@ -244,12 +244,12 @@ export function KnowledgeBaseUploader({ onUploadComplete }: KnowledgeBaseUploade
           <Upload className="h-12 w-12 mx-auto mb-4 text-gray-400" />
           <p className="text-lg font-medium mb-2">Drop files here or click to browse</p>
           <p className="text-sm text-gray-500 mb-4">
-            Supports PDF, DOC, DOCX, TXT, and MD files (max 10MB each)
+            Supports PDF, DOC, DOCX, TXT, MD, and ZIP files (max 10MB each)
           </p>
           <input
             type="file"
             multiple
-            accept=".pdf,.doc,.docx,.txt,.md"
+            accept=".pdf,.doc,.docx,.txt,.md,.zip"
             onChange={(e) => handleFileSelect(e.target.files)}
             className="hidden"
             id="file-input"
