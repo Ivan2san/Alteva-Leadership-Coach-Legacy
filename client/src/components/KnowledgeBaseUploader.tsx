@@ -90,6 +90,8 @@ export function KnowledgeBaseUploader({ onUploadComplete }: KnowledgeBaseUploade
         'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
         'text/plain',
         'text/markdown',
+        'application/zip',
+        'application/x-zip-compressed',
       ];
 
       if (!allowedTypes.includes(file.type)) {
